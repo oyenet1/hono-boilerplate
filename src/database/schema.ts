@@ -1,38 +1,59 @@
 import {
-  integer,
-  sqliteTable,
+  pgTable,
+  varchar,
   text,
-  primaryKey,
-} from "drizzle-orm/sqlite-core";
+  timestamp,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { createId } from "@paralleldrive/cuid2";
 
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-});
+export const users = pgTable(
+  "users",
+  {
+    id: varchar("id", { length: 128 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    name: varchar("name", { length: 255 }).notNull(),
+    email: varchar("email", { length: 255 }).notNull().unique(),
+    password: text("password").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    nameIdx: index("users_name_idx").on(table.name),
+    emailIdx: uniqueIndex("users_email_idx").on(table.email),
+  })
+);
 
-export const posts = sqliteTable("posts", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  userId: integer("user_id")
-    .notNull()
-    .references(() => users.id),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-});
+export const posts = pgTable(
+  "posts",
+  {
+    id: varchar("id", { length: 128 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    title: varchar("title", { length: 255 }).notNull(),
+    content: text("content").notNull(),
+    userId: varchar("user_id", { length: 128 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    userIdIdx: index("posts_user_id_idx").on(table.userId),
+    titleIdx: index("posts_title_idx").on(table.title),
+  })
+);
 
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users);

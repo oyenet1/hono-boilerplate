@@ -1,15 +1,12 @@
-import { injectable, inject } from "inversify";
+import { inject, injectable } from "inversify";
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-import type { IUserController } from "../interfaces/IUserController";
 import type { IUserService } from "../interfaces/IUserService";
 import { TYPES } from "../di/types";
 
 @injectable()
-export class UserController implements IUserController {
-  constructor(
-    @inject(TYPES.UserService) private userService: IUserService
-  ) {}
+export class UserController {
+  constructor(@inject(TYPES.UserService) private userService: IUserService) {}
 
   async getUsers(c: Context) {
     try {

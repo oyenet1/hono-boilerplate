@@ -1,36 +1,66 @@
 import { hash } from "bcryptjs";
-import { db } from "../config/database";
-import { config } from "../config/app";
+import { db } from "./connection";
+import { users, posts } from "./schema";
+import { appConfig } from "../config/app";
 
 async function seed() {
   try {
-    console.log("Seeding database...");
+    console.log("🌱 Seeding database...");
 
     // Create sample users
-    const hashedPassword = await hash("password123", config.bcryptRounds);
+    const hashedPassword = await hash("password123", appConfig.bcryptRounds);
 
-    await db.run(`
-      INSERT OR IGNORE INTO users (name, email, password, created_at, updated_at)
-      VALUES 
-        ('John Doe', 'john@example.com', '${hashedPassword}', ${Date.now()}, ${Date.now()}),
-        ('Jane Smith', 'jane@example.com', '${hashedPassword}', ${Date.now()}, ${Date.now()})
-    `);
+    const seedUsers = await db
+      .insert(users)
+      .values([
+        {
+          name: "John Doe",
+          email: "john@example.com",
+          password: hashedPassword,
+        },
+        {
+          name: "Jane Smith",
+          email: "jane@example.com",
+          password: hashedPassword,
+        },
+      ])
+      .onConflictDoNothing()
+      .returning();
 
-    // Create sample posts
-    await db.run(`
-      INSERT OR IGNORE INTO posts (title, content, user_id, created_at, updated_at)
-      VALUES 
-        ('First Post', 'This is my first post content', 1, ${Date.now()}, ${Date.now()}),
-        ('Second Post', 'This is my second post content', 1, ${Date.now()}, ${Date.now()}),
-        ('Jane Post', 'This is Jane''s post content', 2, ${Date.now()}, ${Date.now()})
-    `);
+    if (seedUsers.length > 0) {
+      // Create sample posts
+      await db
+        .insert(posts)
+        .values([
+          {
+            title: "First Post",
+            content: "This is my first post content",
+            userId: seedUsers[0].id,
+          },
+          {
+            title: "Second Post",
+            content: "This is my second post content",
+            userId: seedUsers[0].id,
+          },
+          {
+            title: "Jane's Post",
+            content: "This is Jane's post content",
+            userId: seedUsers[1].id,
+          },
+        ])
+        .onConflictDoNothing();
+    }
 
-    console.log("Database seeded successfully");
+    console.log("✅ Database seeded successfully");
   } catch (error) {
-    console.error("Seeding failed:", error);
+    console.error("❌ Seeding failed:", error);
     process.exit(1);
   }
 }
 
 // Run seeding
-seed();
+if (import.meta.main) {
+  seed();
+}
+
+export { seed };

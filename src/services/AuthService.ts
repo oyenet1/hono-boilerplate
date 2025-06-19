@@ -1,17 +1,15 @@
-import { injectable, inject } from "inversify";
+import { inject, injectable } from "inversify";
 import { hash, compare } from "bcryptjs";
-import { sign } from "jsonwebtoken";
+import { sign } from "hono/utils/jwt";
 import type { IAuthService } from "../interfaces/IAuthService";
 import type { IUserService } from "../interfaces/IUserService";
 import { TYPES } from "../di/types";
-import type { CreateUserDto, LoginDto } from "../dtos";
+import { CreateUserDto, LoginDto } from "../dtos";
 import { config } from "../config/app";
 
 @injectable()
 export class AuthService implements IAuthService {
-  constructor(
-    @inject(TYPES.UserService) private userService: IUserService
-  ) {}
+  constructor(@inject(TYPES.UserService) private userService: IUserService) {}
 
   async register(userData: CreateUserDto) {
     const hashedPassword = await hash(userData.password, config.bcryptRounds);
@@ -60,7 +58,7 @@ export class AuthService implements IAuthService {
     };
   }
 
-  private generateToken(userId: number): string {
-    return sign({ userId }, config.jwtSecret, { expiresIn: "7d" });
+  private async generateToken(userId: number): Promise<string> {
+    return await sign({ userId }, config.jwtSecret);
   }
 }

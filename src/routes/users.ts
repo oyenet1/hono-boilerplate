@@ -1,11 +1,11 @@
 import { Hono } from "hono";
 import { container } from "../di/container";
 import { TYPES } from "../di/types";
-import type { IUserController } from "../interfaces/IUserController";
+import { UserController } from "../controllers/UserController";
 import { authMiddleware } from "../middleware";
 
 const users = new Hono();
-const userController = container.get<IUserController>(TYPES.UserController);
+const userController = container.get<UserController>(TYPES.UserController);
 
 users.get("/", (c) => userController.getUsers(c));
 users.get("/:id", (c) => userController.getUser(c));

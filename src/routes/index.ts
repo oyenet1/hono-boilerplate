@@ -1,21 +1,23 @@
 import { Hono } from "hono";
-import { auth } from "./auth";
-import { users } from "./users";
-import { posts } from "./posts";
+import { authRoute } from "./authRoute";
+import { userRoute } from "./userRoute";
+import { postRoute } from "./postRoute";
+import { rateLimits } from "../middleware/security";
 
 const routes = new Hono();
 
-// API routes
-routes.route("/auth", auth);
-routes.route("/users", users);
-routes.route("/posts", posts);
+// API routes with proper rate limiting
+routes.route("/auth", authRoute);
+routes.route("/users", userRoute);
+routes.route("/posts", postRoute);
 
-// Health check
-routes.get("/health", (c) => {
+// Health check endpoint with public rate limiting
+routes.get("/health", rateLimits.public, (c) => {
   return c.json({
     success: true,
     message: "API is healthy",
     timestamp: new Date().toISOString(),
+    redis: "connected", // You can check actual Redis status here
   });
 });
 

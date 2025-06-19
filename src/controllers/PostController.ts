@@ -1,15 +1,12 @@
-import { injectable, inject } from "inversify";
+import { inject, injectable } from "inversify";
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-import type { IPostController } from "../interfaces/IPostController";
 import type { IPostService } from "../interfaces/IPostService";
 import { TYPES } from "../di/types";
 
 @injectable()
-export class PostController implements IPostController {
-  constructor(
-    @inject(TYPES.PostService) private postService: IPostService
-  ) {}
+export class PostController {
+  constructor(@inject(TYPES.PostService) private postService: IPostService) {}
 
   async getPosts(c: Context) {
     try {

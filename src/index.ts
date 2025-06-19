@@ -1,12 +1,19 @@
 import "reflect-metadata";
 import { Hono } from "hono";
 import { config } from "./config/app";
-import { corsMiddleware, loggerMiddleware, errorHandler } from "./middleware";
+import {
+  corsMiddleware,
+  securityHeadersMiddleware,
+  loggerMiddleware,
+  errorHandler,
+} from "./middleware/security";
 import { routes } from "./routes";
+import { redisManager } from "./config/redis";
 
 const app = new Hono();
 
-// Global middleware
+// Global security middleware
+app.use("*", securityHeadersMiddleware);
 app.use("*", corsMiddleware);
 app.use("*", loggerMiddleware);
 
@@ -17,9 +24,16 @@ app.route("/api", routes);
 app.get("/", (c) => {
   return c.json({
     success: true,
-    message: "Welcome to Hono MVC Boilerplate",
-    version: "1.0.0",
+    message: "Hono MVC Boilerplate API - Secure Edition",
+    version: "2.0.0",
+    features: [
+      "JWT Authentication",
+      "Redis Sessions",
+      "Rate Limiting",
+      "Security Headers",
+    ],
     documentation: "/api/health",
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -31,13 +45,32 @@ app.notFound((c) => {
   return c.json(
     {
       success: false,
-      message: "Route not found",
+      error: "Route not found",
+      timestamp: new Date().toISOString(),
     },
     404
   );
 });
 
-console.log(`Server is running on port ${config.port}`);
+// Graceful shutdown handling
+const gracefulShutdown = async () => {
+  console.log("Shutting down gracefully...");
+  try {
+    await redisManager.disconnect();
+    console.log("Redis disconnected");
+    process.exit(0);
+  } catch (error) {
+    console.error("Error during shutdown:", error);
+    process.exit(1);
+  }
+};
+
+process.on("SIGINT", gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);
+
+console.log(`🚀 Server starting on port ${config.port}`);
+console.log(`🔒 Security features enabled`);
+console.log(`📊 Redis connection configured`);
 
 export default {
   port: config.port,

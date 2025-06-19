@@ -1,6 +1,6 @@
 import { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { verify } from "jsonwebtoken";
+import { verify } from "hono/utils/jwt";
 import { config } from "../config/app";
 
 export const authMiddleware = async (c: Context, next: Next) => {
@@ -13,7 +13,9 @@ export const authMiddleware = async (c: Context, next: Next) => {
   const token = authHeader.substring(7);
 
   try {
-    const decoded = verify(token, config.jwtSecret) as { userId: number };
+    const decoded = (await verify(token, config.jwtSecret)) as {
+      userId: number;
+    };
     c.set("userId", decoded.userId);
     await next();
   } catch (error) {

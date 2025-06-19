@@ -1,42 +1,34 @@
-import { db } from "../config/database";
-import { users, posts } from "./schema";
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import postgres from "postgres";
+import { appConfig } from "../config/app";
 
-async function migrate() {
+async function runMigrations() {
+  console.log("🔄 Running database migrations...");
+
   try {
-    console.log("Running migrations...");
+    // Create connection for migrations
+    const sql = postgres(appConfig.database.url, { max: 1 });
+    const db = drizzle(sql);
 
-    // Create users table
-    await db.run(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
-      )
-    `);
+    // Run migrations
+    await migrate(db, {
+      migrationsFolder: "./src/database/migrations",
+    });
 
-    // Create posts table
-    await db.run(`
-      CREATE TABLE IF NOT EXISTS posts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        content TEXT NOT NULL,
-        user_id INTEGER NOT NULL,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users (id)
-      )
-    `);
+    console.log("✅ Database migrations completed successfully!");
 
-    console.log("Migrations completed successfully");
+    // Close connection
+    await sql.end();
   } catch (error) {
-    console.error("Migration failed:", error);
+    console.error("❌ Migration failed:", error);
     process.exit(1);
   }
 }
 
+// Run migrations if this file is executed directly
 if (import.meta.main) {
-  migrate();
+  runMigrations();
 }
+
+export { runMigrations };
