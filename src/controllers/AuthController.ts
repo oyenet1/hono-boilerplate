@@ -1,9 +1,13 @@
 import { inject, injectable } from "inversify";
 import { Context } from "hono";
-import { HTTPException } from "hono/http-exception";
 import type { IAuthService } from "../interfaces/IAuthService";
 import { TYPES } from "../di/types";
 import { ResponseHelper } from "../utils/response";
+import {
+  BadRequestError,
+  UnauthorizedError,
+  handleDatabaseError,
+} from "../utils/errorHandlers";
 
 @injectable()
 export class AuthController {
@@ -19,10 +23,13 @@ export class AuthController {
 
       return ResponseHelper.created(c, result, "User registered successfully");
     } catch (error) {
-      return ResponseHelper.badRequest(
-        c,
-        error instanceof Error ? error.message : "Registration failed"
-      );
+      if (error instanceof Error) {
+        if (error.message.includes("already exists")) {
+          throw new BadRequestError(error.message);
+        }
+        throw handleDatabaseError(error);
+      }
+      throw new BadRequestError("Registration failed");
     }
   }
 
@@ -41,10 +48,21 @@ export class AuthController {
 
       return ResponseHelper.success(c, result, "Login successful");
     } catch (error) {
-      return ResponseHelper.unauthorized(
-        c,
-        error instanceof Error ? error.message : "Login failed"
-      );
+      if (error instanceof Error) {
+        if (
+          error.message.includes("Invalid credentials") ||
+          error.message.includes("not found")
+        ) {
+          throw new UnauthorizedError("Invalid email or password");
+        }
+        if (
+          error.message.includes("blocked") ||
+          error.message.includes("attempts")
+        ) {
+          throw new UnauthorizedError(error.message);
+        }
+      }
+      throw new UnauthorizedError("Login failed");
     }
   }
 
@@ -52,7 +70,7 @@ export class AuthController {
     try {
       const sessionData = c.get("sessionData");
       if (!sessionData) {
-        return ResponseHelper.badRequest(c, "No active session found");
+        throw new BadRequestError("No active session found");
       }
 
       // Extract session ID from the auth header
@@ -65,11 +83,10 @@ export class AuthController {
 
       return ResponseHelper.success(c, null, "Logout successful");
     } catch (error) {
-      return ResponseHelper.error(
-        c,
-        error instanceof Error ? error.message : "Logout failed",
-        500
-      );
+      if (error instanceof BadRequestError) {
+        throw error;
+      }
+      throw new BadRequestError("Logout failed");
     }
   }
 
@@ -78,13 +95,13 @@ export class AuthController {
       const { sessionId } = await c.req.json();
 
       if (!sessionId) {
-        return ResponseHelper.badRequest(c, "Session ID required");
+        throw new BadRequestError("Session ID required");
       }
 
       const result = await this.authService.refreshSession(sessionId);
 
       if (!result) {
-        return ResponseHelper.unauthorized(c, "Invalid session");
+        throw new UnauthorizedError("Invalid session");
       }
 
       return ResponseHelper.success(
@@ -93,17 +110,23 @@ export class AuthController {
         "Session refreshed successfully"
       );
     } catch (error) {
-      return ResponseHelper.error(
-        c,
-        error instanceof Error ? error.message : "Session refresh failed",
-        500
-      );
+      if (
+        error instanceof BadRequestError ||
+        error instanceof UnauthorizedError
+      ) {
+        throw error;
+      }
+      throw new BadRequestError("Session refresh failed");
     }
   }
 
   async profile(c: Context) {
     try {
       const userId = c.get("userId");
+      if (!userId) {
+        throw new UnauthorizedError("User not authenticated");
+      }
+
       // Implementation would get user profile
       return ResponseHelper.success(
         c,
@@ -111,7 +134,10 @@ export class AuthController {
         "Profile retrieved successfully"
       );
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to retrieve profile", 500);
+      if (error instanceof UnauthorizedError) {
+        throw error;
+      }
+      throw new BadRequestError("Failed to retrieve profile");
     }
   }
 }

@@ -1,9 +1,13 @@
 import { inject, injectable } from "inversify";
 import { Context } from "hono";
-import { HTTPException } from "hono/http-exception";
 import type { IUserService } from "../interfaces/IUserService";
 import { TYPES } from "../di/types";
 import { ResponseHelper } from "../utils/response";
+import {
+  NotFoundError,
+  BadRequestError,
+  handleDatabaseError,
+} from "../utils/errorHandlers";
 
 @injectable()
 export class UserController {
@@ -19,57 +23,74 @@ export class UserController {
 
       return ResponseHelper.success(c, users, "Users retrieved successfully");
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to retrieve users", 500);
+      throw handleDatabaseError(error);
     }
   }
 
   async getUser(c: Context) {
     try {
       const id = c.req.param("id");
+      if (!id) {
+        throw new BadRequestError("User ID is required");
+      }
+
       const user = await this.userService.findById(id);
 
       if (!user) {
-        return ResponseHelper.notFound(c, "User not found");
+        throw new NotFoundError("User");
       }
 
       return ResponseHelper.success(c, user, "User retrieved successfully");
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to retrieve user", 500);
+      if (error instanceof NotFoundError || error instanceof BadRequestError) {
+        throw error;
+      }
+      throw handleDatabaseError(error);
     }
   }
 
   async updateUser(c: Context) {
     try {
       const id = c.req.param("id");
+      if (!id) {
+        throw new BadRequestError("User ID is required");
+      }
+
       const userData = await c.req.json();
       const user = await this.userService.updateUser(id, userData);
 
       if (!user) {
-        return ResponseHelper.notFound(c, "User not found");
+        throw new NotFoundError("User");
       }
 
       return ResponseHelper.success(c, user, "User updated successfully");
     } catch (error) {
-      return ResponseHelper.error(
-        c,
-        error instanceof Error ? error.message : "Failed to update user",
-        500
-      );
+      if (error instanceof NotFoundError || error instanceof BadRequestError) {
+        throw error;
+      }
+      throw handleDatabaseError(error);
     }
   }
 
   async deleteUser(c: Context) {
     try {
       const id = c.req.param("id");
+      if (!id) {
+        throw new BadRequestError("User ID is required");
+      }
+
       const deleted = await this.userService.deleteUser(id);
 
       if (!deleted) {
-        return ResponseHelper.notFound(c, "User not found");
+        throw new NotFoundError("User");
       }
 
       return ResponseHelper.success(c, null, "User deleted successfully");
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to delete user", 500);
+      if (error instanceof NotFoundError || error instanceof BadRequestError) {
+        throw error;
+      }
+      throw handleDatabaseError(error);
     }
   }
 }

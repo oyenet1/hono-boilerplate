@@ -1,9 +1,14 @@
 import { inject, injectable } from "inversify";
 import { Context } from "hono";
-import { HTTPException } from "hono/http-exception";
 import type { IPostService } from "../interfaces/IPostService";
 import { TYPES } from "../di/types";
 import { ResponseHelper } from "../utils/response";
+import {
+  NotFoundError,
+  BadRequestError,
+  UnauthorizedError,
+  handleDatabaseError,
+} from "../utils/errorHandlers";
 
 @injectable()
 export class PostController {
@@ -19,22 +24,29 @@ export class PostController {
 
       return ResponseHelper.success(c, posts, "Posts retrieved successfully");
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to retrieve posts", 500);
+      throw handleDatabaseError(error);
     }
   }
 
   async getPost(c: Context) {
     try {
       const id = c.req.param("id");
+      if (!id) {
+        throw new BadRequestError("Post ID is required");
+      }
+
       const post = await this.postService.findById(id);
 
       if (!post) {
-        return ResponseHelper.notFound(c, "Post not found");
+        throw new NotFoundError("Post");
       }
 
       return ResponseHelper.success(c, post, "Post retrieved successfully");
     } catch (error) {
-      return ResponseHelper.error(c, "Failed to retrieve post", 500);
+      if (error instanceof NotFoundError || error instanceof BadRequestError) {
+        throw error;
+      }
+      throw handleDatabaseError(error);
     }
   }
 

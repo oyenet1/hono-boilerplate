@@ -5,8 +5,8 @@ import {
   corsMiddleware,
   securityHeadersMiddleware,
   loggerMiddleware,
-  errorHandler,
 } from "./middleware/security";
+import { errorHandler } from "./utils/errorHandlers";
 import { routes } from "./routes";
 import { redisManager } from "./config/redis";
 import { ResponseHelper } from "./utils/response";
@@ -17,6 +17,7 @@ const app = new Hono();
 app.use("*", securityHeadersMiddleware);
 app.use("*", corsMiddleware);
 app.use("*", loggerMiddleware);
+app.use("*", errorHandler);
 
 // Routes
 app.route("/api", routes);
@@ -45,8 +46,8 @@ app.get("/", (c) => {
   );
 });
 
-// Error handling
-app.onError(errorHandler);
+// Error handling - remove the onError since we're using middleware
+// app.onError(errorHandler);
 
 // 404 handler
 app.notFound((c) => {
