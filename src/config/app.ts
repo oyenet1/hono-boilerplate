@@ -3,6 +3,7 @@ import "dotenv/config";
 export const appConfig = {
   port: process.env.PORT || 3000,
   host: process.env.HOST || "localhost",
+  environment: process.env.NODE_ENV || "development",
   jwtSecret: process.env.JWT_SECRET || "your-secret-key",
   bcryptRounds: 10,
   database: {

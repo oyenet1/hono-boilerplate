@@ -149,6 +149,22 @@ export const rateLimits = {
     message: "Too many authentication attempts, please try again later",
   }),
 
+  // OTP sending - once every 5 minutes
+  otpSend: createRateLimitMiddleware({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 1, // Only 1 OTP per 5 minutes
+    message:
+      "OTP can only be sent once every 5 minutes. Please wait before requesting another OTP",
+  }),
+
+  // OTP verification - 3 attempts in 5 minutes
+  otpVerify: createRateLimitMiddleware({
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 3, // Maximum 3 verification attempts in 5 minutes
+    message:
+      "Too many OTP verification attempts. Please wait 5 minutes before trying again",
+  }),
+
   // Moderate rate limiting for API endpoints
   api: createRateLimitMiddleware({
     windowMs: 60 * 1000, // 1 minute
@@ -268,7 +284,7 @@ export const errorHandler = (err: Error, c: Context) => {
 
   // Don't expose internal errors in production
   const message =
-    config.NODE_ENV === "production" ? "Internal Server Error" : err.message;
+    config.environment === "production" ? "Internal Server Error" : err.message;
 
   return c.json(
     {
