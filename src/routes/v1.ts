@@ -5,7 +5,7 @@ import { postRoute } from "./postRoute";
 import { ResponseHelper } from "../utils/response";
 import { HealthChecker } from "../utils/healthChecker";
 
-const v1 = new Hono();
+const v1 = new Hono().basePath("/v1");
 
 // API v1 with proper rate limiting
 v1.route("/auth", authRoute);
