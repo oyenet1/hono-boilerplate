@@ -3,6 +3,7 @@ import { Context } from "hono";
 import type { IAuthService } from "../interfaces/IAuthService";
 import { TYPES } from "../di/types";
 import { ResponseHelper } from "../utils/response";
+import { TokenExtractor } from "../utils/tokenExtractor";
 import {
   BadRequestError,
   UnauthorizedError,
@@ -73,10 +74,9 @@ export class AuthController {
         throw new BadRequestError("No active session found");
       }
 
-      // Extract session ID from the auth header
-      const authHeader = c.req.header("Authorization");
-      if (authHeader) {
-        const token = authHeader.substring(7);
+      // Extract token using the TokenExtractor utility
+      const token = TokenExtractor.getTokenSafe(c);
+      if (token) {
         // You might need to decode the token to get sessionId, or pass it differently
         // For now, we'll implement a simple logout
       }

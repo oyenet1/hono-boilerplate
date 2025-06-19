@@ -2,7 +2,7 @@
   "name": "hono-boilerplate",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "build": "bun build src/index.ts --outdir ./dist",
+    "build": "bun build src/index.ts --outdir ./dist --target bun --minify",
     "start": "bun run dist/index.js",
     "migrate": "bun run src/database/migrate.ts",
     "seed": "bun run src/database/seed.ts",

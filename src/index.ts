@@ -70,11 +70,51 @@ const gracefulShutdown = async () => {
 process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);
 
-console.log(`🚀 Server starting on port ${config.port}`);
-console.log(`🔒 Security features enabled`);
-console.log(`📊 Redis connection configured`);
+// Startup logging with connection status checks
+const startupCheck = async () => {
+  console.log(`🚀 Server starting on port ${config.port}`);
+  console.log(`🔒 Security features enabled`);
+
+  // Check and display Redis connection status
+  try {
+    const redisStatus = redisManager.isRedisConnected()
+      ? "connected"
+      : "disconnected";
+    console.log(`📊 Redis connection: ${redisStatus}`);
+  } catch (error) {
+    console.log(
+      `📊 Redis connection: error - ${
+        error instanceof Error ? error.message : "unknown"
+      }`
+    );
+  }
+
+  // Check and display Database connection status
+  try {
+    const { HealthChecker } = await import("./utils/healthChecker");
+    const dbStatus = await HealthChecker.checkDatabase();
+    console.log(`🗄️  Database connection: ${dbStatus.status}`);
+    if (dbStatus.status !== "up" && dbStatus.error) {
+      console.log(`   ⚠️  Database issue: ${dbStatus.error}`);
+    }
+  } catch (error) {
+    console.log(
+      `🗄️  Database connection: error - ${
+        error instanceof Error ? error.message : "unknown"
+      }`
+    );
+  }
+
+  console.log(`✅ Server ready at http://localhost:${config.port}`);
+};
+
+// Run startup checks
+startupCheck().catch((error) => {
+  console.error("Startup check failed:", error);
+});
 
 export default {
   port: config.port,
+  host: config.host,
   fetch: app.fetch,
 };

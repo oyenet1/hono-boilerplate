@@ -5,6 +5,7 @@ import { redisManager } from "../config/redis";
 import { container } from "../di/container";
 import { TYPES } from "../di/types";
 import { SecureAuthService } from "../services/SecureAuthService";
+import { TokenExtractor } from "../utils/tokenExtractor";
 
 export interface RateLimitConfig {
   windowMs: number;
@@ -15,15 +16,7 @@ export interface RateLimitConfig {
 }
 
 export const secureAuthMiddleware = async (c: Context, next: Next) => {
-  const authHeader = c.req.header("Authorization");
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw new HTTPException(401, {
-      message: "Unauthorized: Missing or invalid token",
-    });
-  }
-
-  const token = authHeader.substring(7);
+  const token = TokenExtractor.getToken(c);
 
   try {
     const authService = container.get<SecureAuthService>(TYPES.AuthService);
@@ -31,7 +24,7 @@ export const secureAuthMiddleware = async (c: Context, next: Next) => {
 
     if (!sessionData) {
       throw new HTTPException(401, {
-        message: "Unauthorized: Invalid or expired session",
+        message: "Your session has expired. Please login again",
       });
     }
 
@@ -55,7 +48,7 @@ export const secureAuthMiddleware = async (c: Context, next: Next) => {
     }
     console.error("Authentication error:", error);
     throw new HTTPException(401, {
-      message: "Unauthorized: Authentication failed",
+      message: "Authentication failed. Please login to continue",
     });
   }
 };

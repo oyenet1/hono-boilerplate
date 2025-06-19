@@ -15,7 +15,7 @@ export class ValidationHelper {
         throw new HTTPException(422, {
           message: JSON.stringify({
             success: false,
-            message: "Body validation failed",
+            message: "Please check your request data and try again",
             errors: errorMessages,
           }),
         });
@@ -23,8 +23,8 @@ export class ValidationHelper {
       throw new HTTPException(422, {
         message: JSON.stringify({
           success: false,
-          message: "Body validation failed",
-          errors: ["Invalid data format"],
+          message: "Invalid request format. Please check your data",
+          errors: ["The request data format is not valid"],
         }),
       });
     }
@@ -41,7 +41,7 @@ export class ValidationHelper {
         throw new HTTPException(422, {
           message: JSON.stringify({
             success: false,
-            message: "Query validation failed",
+            message: "Please check your query parameters and try again",
             errors: errorMessages,
           }),
         });
@@ -49,8 +49,8 @@ export class ValidationHelper {
       throw new HTTPException(422, {
         message: JSON.stringify({
           success: false,
-          message: "Query validation failed",
-          errors: ["Invalid query parameters"],
+          message: "Invalid query parameters. Please check your request",
+          errors: ["The query parameters format is not valid"],
         }),
       });
     }
@@ -67,7 +67,7 @@ export class ValidationHelper {
         throw new HTTPException(422, {
           message: JSON.stringify({
             success: false,
-            message: "Parameter validation failed",
+            message: "Please check your URL parameters and try again",
             errors: errorMessages,
           }),
         });
@@ -75,8 +75,8 @@ export class ValidationHelper {
       throw new HTTPException(422, {
         message: JSON.stringify({
           success: false,
-          message: "Parameter validation failed",
-          errors: ["Invalid parameters"],
+          message: "Invalid URL parameters. Please check your request",
+          errors: ["The URL parameters format is not valid"],
         }),
       });
     }
@@ -96,9 +96,16 @@ export class ValidationHelper {
       return field ? `${field}: ${err.message}` : err.message;
     });
 
+    const contextMessages: Record<string, string> = {
+      Body: "Please check your request data and try again",
+      Query: "Please check your query parameters and try again",
+      Parameter: "Please check your URL parameters and try again",
+      Validation: "Please check your input and try again",
+    };
+
     return {
       success: false,
-      message: `${context} failed`,
+      message: contextMessages[context] || contextMessages["Validation"],
       errors: errorMessages,
     };
   }

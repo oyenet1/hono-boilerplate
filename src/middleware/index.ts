@@ -2,15 +2,10 @@ import { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { verify } from "hono/utils/jwt";
 import { config } from "../config/app";
+import { TokenExtractor } from "../utils/tokenExtractor";
 
 export const authMiddleware = async (c: Context, next: Next) => {
-  const authHeader = c.req.header("Authorization");
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw new HTTPException(401, { message: "Unauthorized" });
-  }
-
-  const token = authHeader.substring(7);
+  const token = TokenExtractor.getToken(c);
 
   try {
     const decoded = (await verify(token, config.jwtSecret)) as {
@@ -19,7 +14,9 @@ export const authMiddleware = async (c: Context, next: Next) => {
     c.set("userId", decoded.userId);
     await next();
   } catch (error) {
-    throw new HTTPException(401, { message: "Invalid token" });
+    throw new HTTPException(401, {
+      message: "Your session has expired. Please login again",
+    });
   }
 };
 

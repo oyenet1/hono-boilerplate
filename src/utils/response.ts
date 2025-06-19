@@ -31,7 +31,7 @@ export class ResponseHelper {
       response.meta = meta;
     }
 
-    return c.json(response, status);
+    return c.json(response, status as any);
   }
 
   static error(
@@ -49,7 +49,7 @@ export class ResponseHelper {
       response.errors = errors;
     }
 
-    return c.json(response, status);
+    return c.json(response, status as any);
   }
 
   static created<T>(
@@ -60,21 +60,45 @@ export class ResponseHelper {
     return this.success(c, data, message, 201);
   }
 
-  static notFound(c: Context, message: string = "Resource not found") {
+  static notFound(
+    c: Context,
+    message: string = "The requested resource was not found"
+  ) {
     return this.error(c, message, 404);
   }
 
-  static unauthorized(c: Context, message: string = "Unauthorized") {
+  static unauthorized(
+    c: Context,
+    message: string = "Authentication required. Please login to continue"
+  ) {
     return this.error(c, message, 401);
   }
 
-  static forbidden(c: Context, message: string = "Forbidden") {
+  static forbidden(
+    c: Context,
+    message: string = "Permission denied. You don't have access to this resource"
+  ) {
     return this.error(c, message, 403);
+  }
+
+  static sessionExpired(
+    c: Context,
+    message: string = "Your session has expired. Please login again"
+  ) {
+    return this.error(c, message, 401);
+  }
+
+  static validationError(
+    c: Context,
+    message: string = "Validation failed. Please check your input",
+    errors?: string[]
+  ) {
+    return this.error(c, message, 422, errors);
   }
 
   static badRequest(
     c: Context,
-    message: string = "Bad request",
+    message: string = "Invalid request. Please check your data and try again",
     errors?: string[]
   ) {
     return this.error(c, message, 400, errors);

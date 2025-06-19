@@ -2,6 +2,7 @@ import "dotenv/config";
 
 export const appConfig = {
   port: process.env.PORT || 3000,
+  host: process.env.HOST || "localhost",
   jwtSecret: process.env.JWT_SECRET || "your-secret-key",
   bcryptRounds: 10,
   database: {

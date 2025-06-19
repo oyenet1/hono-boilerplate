@@ -39,7 +39,11 @@ export const errorHandler = async (c: Context, next: Next) => {
         return field ? `${field}: ${error.message}` : error.message;
       });
 
-      return ResponseHelper.error(c, "Validation failed", 422, formattedErrors);
+      return ResponseHelper.validationError(
+        c,
+        "Validation failed. Please check your input",
+        formattedErrors
+      );
     }
 
     // Handle generic errors
@@ -47,14 +51,18 @@ export const errorHandler = async (c: Context, next: Next) => {
       // Don't expose internal error messages in production
       const message =
         process.env.NODE_ENV === "production"
-          ? "Internal Server Error"
+          ? "Something went wrong. Please try again later"
           : err.message;
 
       return ResponseHelper.error(c, message, 500);
     }
 
     // Handle unknown errors
-    return ResponseHelper.error(c, "Unknown error occurred", 500);
+    return ResponseHelper.error(
+      c,
+      "An unexpected error occurred. Please try again later",
+      500
+    );
   }
 };
 
@@ -76,7 +84,10 @@ export const asyncHandler = (fn: Function) => {
  * Custom error classes for different types of application errors
  */
 export class ValidationError extends HTTPException {
-  constructor(message: string, errors: string[] = []) {
+  constructor(
+    message: string = "Validation failed. Please check your input",
+    errors: string[] = []
+  ) {
     const errorResponse = {
       success: false,
       message,
@@ -88,30 +99,49 @@ export class ValidationError extends HTTPException {
 
 export class NotFoundError extends HTTPException {
   constructor(resource: string = "Resource") {
-    super(404, { message: `${resource} not found` });
+    const message =
+      resource === "Resource"
+        ? "The requested resource was not found"
+        : `${resource} not found`;
+    super(404, { message });
   }
 }
 
 export class UnauthorizedError extends HTTPException {
-  constructor(message: string = "Unauthorized") {
+  constructor(
+    message: string = "Authentication required. Please login to continue"
+  ) {
     super(401, { message });
   }
 }
 
 export class ForbiddenError extends HTTPException {
-  constructor(message: string = "Forbidden") {
+  constructor(
+    message: string = "Permission denied. You don't have access to this resource"
+  ) {
     super(403, { message });
   }
 }
 
+export class SessionExpiredError extends HTTPException {
+  constructor(
+    message: string = "Your session has expired. Please login again"
+  ) {
+    super(401, { message }); // Use 401 instead of 419 for better compatibility
+  }
+}
+
 export class ConflictError extends HTTPException {
-  constructor(message: string = "Conflict") {
+  constructor(message: string = "This resource already exists") {
     super(409, { message });
   }
 }
 
 export class BadRequestError extends HTTPException {
-  constructor(message: string = "Bad Request", errors: string[] = []) {
+  constructor(
+    message: string = "Invalid request. Please check your data and try again",
+    errors: string[] = []
+  ) {
     if (errors.length > 0) {
       const errorResponse = {
         success: false,
@@ -133,26 +163,36 @@ export const handleDatabaseError = (error: any): HTTPException => {
   // PostgreSQL error codes
   if (error.code === "23505") {
     // Unique violation
-    return new ConflictError("Resource already exists");
+    return new ConflictError(
+      "This resource already exists. Please use different values"
+    );
   }
 
   if (error.code === "23503") {
     // Foreign key violation
-    return new BadRequestError("Referenced resource does not exist");
+    return new BadRequestError(
+      "The referenced resource does not exist. Please check your data"
+    );
   }
 
   if (error.code === "23514") {
     // Check violation
-    return new BadRequestError("Data violates database constraints");
+    return new BadRequestError(
+      "The provided data is invalid. Please check the requirements"
+    );
   }
 
   // Drizzle-specific errors
   if (error.message?.includes("duplicate key")) {
-    return new ConflictError("Resource already exists");
+    return new ConflictError(
+      "This resource already exists. Please use different values"
+    );
   }
 
   if (error.message?.includes("foreign key")) {
-    return new BadRequestError("Referenced resource does not exist");
+    return new BadRequestError(
+      "The referenced resource does not exist. Please check your data"
+    );
   }
 
   // Generic database error
@@ -160,7 +200,7 @@ export const handleDatabaseError = (error: any): HTTPException => {
   return new HTTPException(500, {
     message:
       process.env.NODE_ENV === "production"
-        ? "Database operation failed"
+        ? "We're having trouble saving your data. Please try again later"
         : error.message,
   });
 };
@@ -174,14 +214,15 @@ export const handleRedisError = (error: any): HTTPException => {
 
   if (error.message?.includes("Connection")) {
     return new HTTPException(503, {
-      message: "Service temporarily unavailable",
+      message:
+        "Our services are temporarily unavailable. Please try again in a few moments",
     });
   }
 
   return new HTTPException(500, {
     message:
       process.env.NODE_ENV === "production"
-        ? "Cache operation failed"
+        ? "We're experiencing technical difficulties. Please try again later"
         : error.message,
   });
 };
@@ -192,16 +233,24 @@ export const handleRedisError = (error: any): HTTPException => {
  */
 export const handleJWTError = (error: any): HTTPException => {
   if (error.message?.includes("expired")) {
-    return new UnauthorizedError("Token has expired");
+    return new SessionExpiredError(
+      "Your session has expired. Please login again"
+    );
   }
 
   if (error.message?.includes("invalid")) {
-    return new UnauthorizedError("Invalid token");
+    return new UnauthorizedError(
+      "Invalid authentication token. Please login again"
+    );
   }
 
   if (error.message?.includes("malformed")) {
-    return new UnauthorizedError("Malformed token");
+    return new UnauthorizedError(
+      "Invalid authentication format. Please login again"
+    );
   }
 
-  return new UnauthorizedError("Authentication failed");
+  return new UnauthorizedError(
+    "Authentication failed. Please login to continue"
+  );
 };
