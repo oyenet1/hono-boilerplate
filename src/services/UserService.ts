@@ -30,7 +30,14 @@ export class UserService implements IUserService {
     id: string,
     userData: UpdateUserDto
   ): Promise<User | undefined> {
-    return await this.database.updateUser(id, userData);
+    return this.database.updateUser(id, userData);
+  }
+
+  async updatePassword(
+    id: string,
+    password: string
+  ): Promise<User | undefined> {
+    return this.database.updateUser(id, { password });
   }
 
   async deleteUser(id: string): Promise<boolean> {

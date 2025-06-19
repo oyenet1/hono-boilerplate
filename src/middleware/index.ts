@@ -1,14 +1,14 @@
 import { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { verify } from "hono/jwt";
-import { config } from "../config/app";
+import { appConfig } from "../config/app";
 import { TokenExtractor } from "../utils/tokenExtractor";
 
 export const authMiddleware = async (c: Context, next: Next) => {
   const token = TokenExtractor.getToken(c);
 
   try {
-    const decoded = (await verify(token, config.jwtSecret)) as {
+    const decoded = (await verify(token, appConfig.jwt.secret)) as {
       userId: number;
     };
     c.set("userId", decoded.userId);
@@ -21,9 +21,15 @@ export const authMiddleware = async (c: Context, next: Next) => {
 };
 
 export const corsMiddleware = async (c: Context, next: Next) => {
-  c.header("Access-Control-Allow-Origin", config.cors.origin);
-  c.header("Access-Control-Allow-Methods", config.cors.allowMethods.join(", "));
-  c.header("Access-Control-Allow-Headers", config.cors.allowHeaders.join(", "));
+  c.header("Access-Control-Allow-Origin", appConfig.cors.origin);
+  c.header(
+    "Access-Control-Allow-Methods",
+    appConfig.cors.allowMethods.join(", ")
+  );
+  c.header(
+    "Access-Control-Allow-Headers",
+    appConfig.cors.allowHeaders.join(", ")
+  );
 
   if (c.req.method === "OPTIONS") {
     return c.text("", 200);

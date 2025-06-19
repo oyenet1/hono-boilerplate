@@ -15,3 +15,18 @@ export { sql };
 
 // Type definitions
 export type Database = typeof db;
+
+const dbPlaceholder = {
+  connect: async () => {
+    console.log("Database connected");
+  },
+  disconnect: async () => {
+    console.log("Database disconnected");
+  },
+  query: async (sql: string, params?: any[]) => {
+    console.log("Executing query:", sql, params);
+    return [];
+  },
+};
+
+export default dbPlaceholder;

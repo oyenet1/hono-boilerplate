@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { inject, injectable } from "inversify";
 import { hash, compare } from "bcryptjs";
 import { sign, verify } from "hono/jwt";
@@ -5,7 +6,7 @@ import type { IAuthService } from "../interfaces/IAuthService";
 import type { IUserService } from "../interfaces/IUserService";
 import { TYPES } from "../di/types";
 import { CreateUserDto, LoginDto } from "../dtos";
-import { config } from "../config/app";
+import { appConfig } from "../config/app";
 import { redisManager } from "../config/redis";
 
 interface SessionData {
@@ -35,7 +36,10 @@ export class SecureAuthService implements IAuthService {
     }
 
     // Hash password with high salt rounds
-    const hashedPassword = await hash(userData.password, config.bcryptRounds);
+    const hashedPassword = await hash(
+      userData.password,
+      appConfig.security.bcryptRounds
+    );
 
     // Create user
     const user = await this.userService.createUser({
@@ -104,250 +108,197 @@ export class SecureAuthService implements IAuthService {
   }
 
   async logout(sessionId: string): Promise<void> {
-    try {
-      await redisManager.deleteSession(sessionId);
-    } catch (error) {
-      console.error("Error during logout:", error);
-      throw new Error("Logout failed");
-    }
+    await redisManager.del(`session:${sessionId}`);
   }
 
-  async verifySession(token: string): Promise<SessionData | null> {
+  async verifySession(token: string) {
     try {
-      // Verify JWT token
-      const payload = (await verify(token, config.jwtSecret)) as any;
-
-      if (!payload.sessionId || !payload.userId) {
-        return null;
-      }
-
-      // Check if session exists in Redis
-      const sessionData = await redisManager.getSession(payload.sessionId);
-      if (!sessionData) {
-        return null;
-      }
-
-      // Verify session integrity
-      if (sessionData.userId !== payload.userId) {
-        await redisManager.deleteSession(payload.sessionId);
-        return null;
-      }
-
-      // Check if session is still valid (not expired)
-      const now = Date.now();
-      if (sessionData.lastActivity + config.security.sessionTTL * 1000 < now) {
-        await redisManager.deleteSession(payload.sessionId);
-        return null;
-      }
-
-      // Update last activity
-      sessionData.lastActivity = now;
-      await redisManager.setSession(
-        payload.sessionId,
-        sessionData,
-        config.security.sessionTTL
-      );
-
-      return sessionData;
+      const payload = (await verify(token, appConfig.jwt.secret)) as any;
+      const sessionKey = `session:${payload.sessionId}`;
+      const sessionData = await redisManager.get(sessionKey);
+      return sessionData ? JSON.parse(sessionData) : null;
     } catch (error) {
-      console.error("Session verification error:", error);
       return null;
     }
   }
 
-  async refreshSession(sessionId: string): Promise<{ token: string } | null> {
-    try {
-      const sessionData = await redisManager.getSession(sessionId);
-      if (!sessionData) {
-        return null;
-      }
-
-      // Update session TTL
-      await redisManager.extendSession(sessionId, config.security.sessionTTL);
-
-      // Create new JWT token
-      const token = await sign(
-        {
-          userId: sessionData.userId,
-          sessionId: sessionId,
-          iat: Math.floor(Date.now() / 1000),
-          exp: Math.floor(Date.now() / 1000) + config.security.sessionTTL,
-        },
-        config.jwtSecret
-      );
-
-      return { token };
-    } catch (error) {
-      console.error("Session refresh error:", error);
+  async refreshSession(sessionId: string) {
+    const sessionKey = `session:${sessionId}`;
+    const sessionDataString = await redisManager.get(sessionKey);
+    if (!sessionDataString) {
       return null;
     }
+
+    const sessionData: SessionData = JSON.parse(sessionDataString);
+    const { token } = await this.createSecureSession(
+      { id: sessionData.userId, email: sessionData.email },
+      sessionData.ipAddress,
+      sessionData.userAgent
+    );
+
+    return { token };
   }
 
   async invalidateAllUserSessions(userId: string): Promise<void> {
-    try {
-      // This would require a more complex implementation to track all user sessions
-      // For now, we'll implement a basic version
-      const sessionPattern = `session:*`;
-      // Note: In production, you'd want to maintain a user-to-sessions mapping
-      console.log(`Invalidating all sessions for user ${userId}`);
-    } catch (error) {
-      console.error("Error invalidating user sessions:", error);
-      throw new Error("Failed to invalidate sessions");
+    const keys = await redisManager.keys(`session:*:${userId}`);
+    if (keys.length > 0) {
+      await redisManager.del(keys);
     }
   }
 
   private async createSecureSession(
-    user: any,
+    user: { id: string; email: string },
     ipAddress?: string,
     userAgent?: string
-  ): Promise<{ token: string; sessionId: string }> {
-    // Generate unique session ID
-    const sessionId = this.generateSecureSessionId();
-    const now = Date.now();
+  ) {
+    const sessionId = randomUUID();
+    const sessionKey = `session:${sessionId}`;
+    const now = Math.floor(Date.now() / 1000);
 
-    // Create session data
-    const sessionData: SessionData = {
-      userId: user.id,
-      email: user.email,
-      loginTime: now,
-      lastActivity: now,
-      ipAddress,
-      userAgent,
-    };
-
-    // Store session in Redis
-    await redisManager.setSession(
-      sessionId,
-      sessionData,
-      config.security.sessionTTL
-    );
-
-    // Create JWT token
     const token = await sign(
       {
         userId: user.id,
-        sessionId: sessionId,
-        iat: Math.floor(now / 1000),
-        exp: Math.floor(now / 1000) + config.security.sessionTTL,
+        sessionId,
+        email: user.email,
+        exp: now + appConfig.security.sessionTTL,
       },
-      config.jwtSecret
+      appConfig.jwt.secret
+    );
+
+    const newSessionData: SessionData = {
+      userId: user.id,
+      email: user.email,
+      loginTime: Date.now(),
+      ipAddress,
+      userAgent,
+      lastActivity: Date.now(),
+    };
+
+    await redisManager.setWithExpiry(
+      sessionKey,
+      JSON.stringify(newSessionData),
+      appConfig.security.sessionTTL
     );
 
     return { token, sessionId };
   }
 
-  private generateSecureSessionId(): string {
-    // Generate a cryptographically secure session ID
-    const chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    const randomArray = new Uint8Array(32);
-    crypto.getRandomValues(randomArray);
-
-    for (let i = 0; i < randomArray.length; i++) {
-      result += chars[randomArray[i] % chars.length];
+  async createPasswordResetToken(email: string) {
+    const user = await this.userService.findByEmail(email);
+    if (!user) {
+      // To prevent user enumeration, don't reveal that the user doesn't exist
+      return null;
     }
 
-    return result;
+    const resetToken = randomUUID();
+    const tokenKey = `password-reset:${resetToken}`;
+
+    await redisManager.setWithExpiry(
+      tokenKey,
+      user.id,
+      appConfig.security.passwordResetTTL
+    );
+
+    return resetToken;
   }
 
-  private async checkLoginAttempts(
-    email: string,
-    ipAddress?: string
-  ): Promise<void> {
-    const keys = [
-      `login_attempts:email:${email}`,
-      ipAddress ? `login_attempts:ip:${ipAddress}` : null,
-    ].filter(Boolean) as string[];
+  async resetPassword(token: string, newPassword: string, ipAddress?: string) {
+    const tokenKey = `password-reset:${token}`;
+    const userId = await redisManager.get(tokenKey);
 
-    for (const key of keys) {
-      const attemptData = await redisManager.getCache(key);
-      if (attemptData) {
-        const attempt: LoginAttempt = attemptData;
+    if (!userId) {
+      throw new Error("Invalid or expired password reset token");
+    }
 
-        if (attempt.blockedUntil && attempt.blockedUntil > Date.now()) {
-          const remainingTime = Math.ceil(
-            (attempt.blockedUntil - Date.now()) / 1000
-          );
-          throw new Error(
-            `Too many login attempts. Try again in ${remainingTime} seconds`
-          );
-        }
+    const hashedPassword = await hash(
+      newPassword,
+      appConfig.security.bcryptRounds
+    );
+    await this.userService.updatePassword(userId, hashedPassword);
 
-        if (attempt.count >= config.security.maxLoginAttempts) {
-          const blockTime =
-            Date.now() + config.security.loginAttemptWindow * 1000;
-          attempt.blockedUntil = blockTime;
-          await redisManager.setCache(
-            key,
-            attempt,
-            config.security.loginAttemptWindow
-          );
-          throw new Error(
-            "Too many login attempts. Account temporarily blocked"
-          );
-        }
-      }
+    // Invalidate all active sessions for the user
+    await this.invalidateAllUserSessions(userId);
+
+    // Log the password change for security auditing
+    console.log(
+      `Password reset for user ${userId} from IP ${ipAddress || "unknown"}`
+    );
+
+    await redisManager.del(tokenKey);
+  }
+
+  async invalidateSession(token: string) {
+    try {
+      const payload = (await verify(token, appConfig.jwt.secret)) as any;
+      const sessionKey = `session:${payload.sessionId}`;
+      await redisManager.del(sessionKey);
+    } catch (error) {
+      // Ignore errors if token is invalid
     }
   }
 
-  private async recordFailedLogin(
-    email: string,
-    ipAddress?: string
-  ): Promise<void> {
-    const keys = [
-      `login_attempts:email:${email}`,
-      ipAddress ? `login_attempts:ip:${ipAddress}` : null,
-    ].filter(Boolean) as string[];
+  async invalidateUserSessions(userId: string) {
+    const sessionKeys = await redisManager.keys(`session:*:${userId}`);
+    if (sessionKeys.length > 0) {
+      await redisManager.del(sessionKeys);
+    }
+  }
 
-    for (const key of keys) {
-      const now = Date.now();
-      const attemptData = await redisManager.getCache(key);
+  private async checkLoginAttempts(email: string, ipAddress?: string) {
+    const key = `login-attempt:${email}:${ipAddress || ""}`;
+    const attemptData = await redisManager.get(key);
 
-      if (attemptData) {
-        const attempt: LoginAttempt = attemptData;
+    if (attemptData) {
+      const attempt: LoginAttempt = JSON.parse(attemptData);
 
-        // Reset count if window has passed
-        if (
-          now - attempt.lastAttempt >
-          config.security.loginAttemptWindow * 1000
-        ) {
-          attempt.count = 1;
-        } else {
-          attempt.count++;
-        }
-
-        attempt.lastAttempt = now;
-        await redisManager.setCache(
-          key,
-          attempt,
-          config.security.loginAttemptWindow
+      if (attempt.blockedUntil && attempt.blockedUntil > Date.now()) {
+        const remainingSeconds = Math.ceil(
+          (attempt.blockedUntil - Date.now()) / 1000
         );
-      } else {
-        const newAttempt: LoginAttempt = {
-          count: 1,
-          lastAttempt: now,
-        };
-        await redisManager.setCache(
+        throw new Error(
+          `Too many login attempts. Please try again in ${remainingSeconds} seconds.`
+        );
+      }
+
+      if (attempt.count >= appConfig.security.maxLoginAttempts) {
+        const blockedUntil =
+          Date.now() + appConfig.security.loginAttemptWindow * 1000;
+        attempt.blockedUntil = blockedUntil;
+        await redisManager.setWithExpiry(
           key,
-          newAttempt,
-          config.security.loginAttemptWindow
+          JSON.stringify(attempt),
+          appConfig.security.loginAttemptWindow
+        );
+        throw new Error(
+          `Account locked for ${
+            appConfig.security.loginAttemptWindow / 60
+          } minutes.`
         );
       }
     }
   }
 
-  private async resetFailedLogins(
-    email: string,
-    ipAddress?: string
-  ): Promise<void> {
-    const keys = [
-      `login_attempts:email:${email}`,
-      ipAddress ? `login_attempts:ip:${ipAddress}` : null,
-    ].filter(Boolean) as string[];
+  private async recordFailedLogin(email: string, ipAddress?: string) {
+    const key = `login-attempt:${email}:${ipAddress || ""}`;
+    const attemptData = await redisManager.get(key);
 
-    for (const key of keys) {
-      await redisManager.deleteCache(key);
+    let attempt: LoginAttempt = { count: 0, lastAttempt: 0 };
+    if (attemptData) {
+      attempt = JSON.parse(attemptData);
     }
+
+    attempt.count++;
+    attempt.lastAttempt = Date.now();
+
+    await redisManager.setWithExpiry(
+      key,
+      JSON.stringify(attempt),
+      appConfig.security.loginAttemptWindow
+    );
+  }
+
+  private async resetFailedLogins(email: string, ipAddress?: string) {
+    const key = `login-attempt:${email}:${ipAddress || ""}`;
+    await redisManager.del(key);
   }
 }

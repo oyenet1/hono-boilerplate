@@ -1,20 +1,14 @@
 import "dotenv/config";
 
 export const appConfig = {
-  port: process.env.PORT || 3000,
-  host: process.env.HOST || "localhost",
-  environment: process.env.NODE_ENV || "development",
-  jwtSecret: process.env.JWT_SECRET || "your-secret-key",
-  bcryptRounds: 10,
+  port: Number(process.env.PORT) || 3000,
+  env: process.env.NODE_ENV || "development",
   database: {
-    url:
-      process.env.DATABASE_URL ||
-      "postgresql://localhost:5432/hono_boilerplate",
-    host: process.env.DATABASE_HOST || "localhost",
-    port: parseInt(process.env.DATABASE_PORT || "5432"),
-    name: process.env.DATABASE_NAME || "hono_boilerplate",
-    user: process.env.DATABASE_USER || "postgres",
-    password: process.env.DATABASE_PASSWORD || "postgres",
+    url: process.env.DATABASE_URL || "sqlite://./dev.db",
+  },
+  jwt: {
+    secret: process.env.JWT_SECRET || "your-secret-key",
+    expiresIn: process.env.JWT_EXPIRES_IN || "24h",
   },
   cors: {
     origin: process.env.CORS_ORIGIN || "*",
@@ -33,12 +27,10 @@ export const appConfig = {
     maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || "5"),
     loginAttemptWindow: parseInt(process.env.LOGIN_ATTEMPT_WINDOW || "900"),
     passwordResetTTL: parseInt(process.env.PASSWORD_RESET_TTL || "900"),
+    bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS || "10"),
   },
   rateLimit: {
     window: parseInt(process.env.RATE_LIMIT_WINDOW || "60"),
     max: parseInt(process.env.RATE_LIMIT_MAX || "100"),
   },
 };
-
-// Export as 'config' for backward compatibility
-export const config = appConfig;

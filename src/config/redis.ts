@@ -106,7 +106,7 @@ class RedisManager {
     }
   }
 
-  public async deleteSession(sessionId: string): Promise<void> {
+  public async delSession(sessionId: string): Promise<void> {
     try {
       await this.client.del(`session:${sessionId}`);
     } catch (error) {
@@ -115,15 +115,48 @@ class RedisManager {
     }
   }
 
-  public async extendSession(
-    sessionId: string,
-    ttlSeconds: number = 3600
+  // Generic methods
+  public async get(key: string): Promise<string | null> {
+    try {
+      return await this.client.get(key);
+    } catch (error) {
+      console.error(`Error getting key ${key}:`, error);
+      return null;
+    }
+  }
+
+  public async setWithExpiry(
+    key: string,
+    value: string,
+    ttlSeconds: number
   ): Promise<void> {
     try {
-      await this.client.expire(`session:${sessionId}`, ttlSeconds);
+      await this.client.setex(key, ttlSeconds, value);
     } catch (error) {
-      console.error("Error extending session:", error);
+      console.error(`Error setting key ${key} with expiry:`, error);
       throw error;
+    }
+  }
+
+  public async del(key: string | string[]): Promise<void> {
+    try {
+      if (Array.isArray(key)) {
+        await this.client.del(...key);
+      } else {
+        await this.client.del(key);
+      }
+    } catch (error) {
+      console.error(`Error deleting key(s) ${key}:`, error);
+      throw error;
+    }
+  }
+
+  public async keys(pattern: string): Promise<string[]> {
+    try {
+      return await this.client.keys(pattern);
+    } catch (error) {
+      console.error(`Error getting keys for pattern ${pattern}:`, error);
+      return [];
     }
   }
 

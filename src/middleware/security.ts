@@ -1,6 +1,6 @@
 import { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { config } from "../config/app";
+import { appConfig } from "../config/app";
 import { redisManager } from "../config/redis";
 import { container } from "../di/container";
 import { TYPES } from "../di/types";
@@ -189,9 +189,15 @@ export const rateLimits = {
 
 export const corsMiddleware = async (c: Context, next: Next) => {
   // Set secure CORS headers
-  c.header("Access-Control-Allow-Origin", config.cors.origin);
-  c.header("Access-Control-Allow-Methods", config.cors.allowMethods.join(", "));
-  c.header("Access-Control-Allow-Headers", config.cors.allowHeaders.join(", "));
+  c.header("Access-Control-Allow-Origin", appConfig.cors.origin);
+  c.header(
+    "Access-Control-Allow-Methods",
+    appConfig.cors.allowMethods.join(", ")
+  );
+  c.header(
+    "Access-Control-Allow-Headers",
+    appConfig.cors.allowHeaders.join(", ")
+  );
   c.header("Access-Control-Allow-Credentials", "true");
   c.header("Access-Control-Max-Age", "86400");
 
@@ -255,43 +261,16 @@ export const loggerMiddleware = async (c: Context, next: Next) => {
   }
 };
 
-export const errorHandler = (err: Error, c: Context) => {
-  const ipAddress =
-    c.req.header("X-Forwarded-For") || c.req.header("X-Real-IP") || "unknown";
-  const userId = c.get("userId");
-
-  // Log error with context
-  console.error("Error occurred:", {
-    error: err.message,
-    stack: err.stack,
-    url: c.req.url,
-    method: c.req.method,
-    ipAddress,
-    userId,
-    timestamp: new Date().toISOString(),
-  });
-
+export const globalErrorHandler = (err: Error, c: Context) => {
   if (err instanceof HTTPException) {
-    return c.json(
-      {
-        success: false,
-        message: err.message,
-        timestamp: new Date().toISOString(),
-      },
-      err.status
-    );
+    return c.json({ error: err.message }, err.status);
   }
 
-  // Don't expose internal errors in production
-  const message =
-    config.environment === "production" ? "Internal Server Error" : err.message;
+  console.error("Unhandled error:", err);
 
-  return c.json(
-    {
-      success: false,
-      message: message,
-      timestamp: new Date().toISOString(),
-    },
-    500
-  );
+  // Avoid leaking error details in production
+  const errorMessage =
+    appConfig.env === "production" ? "Internal Server Error" : err.message;
+
+  return c.json({ error: errorMessage }, 500);
 };

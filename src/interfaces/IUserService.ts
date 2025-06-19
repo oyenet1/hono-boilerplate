@@ -6,6 +6,7 @@ export interface IUserService {
   findById(id: string): Promise<User | undefined>;
   findByEmail(email: string): Promise<User | undefined>;
   updateUser(id: string, userData: UpdateUserDto): Promise<User | undefined>;
+  updatePassword(id: string, password: string): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
   getAllUsers(page?: number, limit?: number): Promise<User[]>;
 }
