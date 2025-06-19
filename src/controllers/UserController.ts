@@ -3,6 +3,7 @@ import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { IUserService } from "../interfaces/IUserService";
 import { TYPES } from "../di/types";
+import { ResponseHelper } from "../utils/response";
 
 @injectable()
 export class UserController {
@@ -16,72 +17,59 @@ export class UserController {
         Number(limit)
       );
 
-      return c.json({
-        success: true,
-        message: "Users retrieved successfully",
-        data: users,
-      });
+      return ResponseHelper.success(c, users, "Users retrieved successfully");
     } catch (error) {
-      throw new HTTPException(500, {
-        message: "Failed to retrieve users",
-      });
+      return ResponseHelper.error(c, "Failed to retrieve users", 500);
     }
   }
 
   async getUser(c: Context) {
     try {
-      const id = Number(c.req.param("id"));
+      const id = c.req.param("id");
       const user = await this.userService.findById(id);
 
       if (!user) {
-        throw new HTTPException(404, { message: "User not found" });
+        return ResponseHelper.notFound(c, "User not found");
       }
 
-      return c.json({
-        success: true,
-        message: "User retrieved successfully",
-        data: user,
-      });
+      return ResponseHelper.success(c, user, "User retrieved successfully");
     } catch (error) {
-      if (error instanceof HTTPException) throw error;
-      throw new HTTPException(500, {
-        message: "Failed to retrieve user",
-      });
+      return ResponseHelper.error(c, "Failed to retrieve user", 500);
     }
   }
 
   async updateUser(c: Context) {
     try {
-      const id = Number(c.req.param("id"));
+      const id = c.req.param("id");
       const userData = await c.req.json();
       const user = await this.userService.updateUser(id, userData);
 
-      return c.json({
-        success: true,
-        message: "User updated successfully",
-        data: user,
-      });
+      if (!user) {
+        return ResponseHelper.notFound(c, "User not found");
+      }
+
+      return ResponseHelper.success(c, user, "User updated successfully");
     } catch (error) {
-      throw new HTTPException(500, {
-        message:
-          error instanceof Error ? error.message : "Failed to update user",
-      });
+      return ResponseHelper.error(
+        c,
+        error instanceof Error ? error.message : "Failed to update user",
+        500
+      );
     }
   }
 
   async deleteUser(c: Context) {
     try {
-      const id = Number(c.req.param("id"));
-      await this.userService.deleteUser(id);
+      const id = c.req.param("id");
+      const deleted = await this.userService.deleteUser(id);
 
-      return c.json({
-        success: true,
-        message: "User deleted successfully",
-      });
+      if (!deleted) {
+        return ResponseHelper.notFound(c, "User not found");
+      }
+
+      return ResponseHelper.success(c, null, "User deleted successfully");
     } catch (error) {
-      throw new HTTPException(500, {
-        message: "Failed to delete user",
-      });
+      return ResponseHelper.error(c, "Failed to delete user", 500);
     }
   }
 }

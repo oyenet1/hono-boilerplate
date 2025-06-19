@@ -3,6 +3,7 @@ import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { IPostService } from "../interfaces/IPostService";
 import { TYPES } from "../di/types";
+import { ResponseHelper } from "../utils/response";
 
 @injectable()
 export class PostController {
@@ -16,37 +17,24 @@ export class PostController {
         Number(limit)
       );
 
-      return c.json({
-        success: true,
-        message: "Posts retrieved successfully",
-        data: posts,
-      });
+      return ResponseHelper.success(c, posts, "Posts retrieved successfully");
     } catch (error) {
-      throw new HTTPException(500, {
-        message: "Failed to retrieve posts",
-      });
+      return ResponseHelper.error(c, "Failed to retrieve posts", 500);
     }
   }
 
   async getPost(c: Context) {
     try {
-      const id = Number(c.req.param("id"));
+      const id = c.req.param("id");
       const post = await this.postService.findById(id);
 
       if (!post) {
-        throw new HTTPException(404, { message: "Post not found" });
+        return ResponseHelper.notFound(c, "Post not found");
       }
 
-      return c.json({
-        success: true,
-        message: "Post retrieved successfully",
-        data: post,
-      });
+      return ResponseHelper.success(c, post, "Post retrieved successfully");
     } catch (error) {
-      if (error instanceof HTTPException) throw error;
-      throw new HTTPException(500, {
-        message: "Failed to retrieve post",
-      });
+      return ResponseHelper.error(c, "Failed to retrieve post", 500);
     }
   }
 
@@ -54,58 +42,67 @@ export class PostController {
     try {
       const userId = c.get("userId");
       const postData = await c.req.json();
+
+      if (!userId) {
+        return ResponseHelper.unauthorized(c, "User authentication required");
+      }
+
       const post = await this.postService.createPost(postData, userId);
 
-      return c.json(
-        {
-          success: true,
-          message: "Post created successfully",
-          data: post,
-        },
-        201
-      );
+      return ResponseHelper.created(c, post, "Post created successfully");
     } catch (error) {
-      throw new HTTPException(500, {
-        message:
-          error instanceof Error ? error.message : "Failed to create post",
-      });
+      return ResponseHelper.error(
+        c,
+        error instanceof Error ? error.message : "Failed to create post",
+        500
+      );
     }
   }
 
   async updatePost(c: Context) {
     try {
-      const id = Number(c.req.param("id"));
+      const id = c.req.param("id");
       const userId = c.get("userId");
       const postData = await c.req.json();
+
+      if (!userId) {
+        return ResponseHelper.unauthorized(c, "User authentication required");
+      }
+
       const post = await this.postService.updatePost(id, postData, userId);
 
-      return c.json({
-        success: true,
-        message: "Post updated successfully",
-        data: post,
-      });
+      if (!post) {
+        return ResponseHelper.notFound(c, "Post not found or unauthorized");
+      }
+
+      return ResponseHelper.success(c, post, "Post updated successfully");
     } catch (error) {
-      throw new HTTPException(500, {
-        message:
-          error instanceof Error ? error.message : "Failed to update post",
-      });
+      return ResponseHelper.error(
+        c,
+        error instanceof Error ? error.message : "Failed to update post",
+        500
+      );
     }
   }
 
   async deletePost(c: Context) {
     try {
-      const id = Number(c.req.param("id"));
+      const id = c.req.param("id");
       const userId = c.get("userId");
-      await this.postService.deletePost(id, userId);
 
-      return c.json({
-        success: true,
-        message: "Post deleted successfully",
-      });
+      if (!userId) {
+        return ResponseHelper.unauthorized(c, "User authentication required");
+      }
+
+      const deleted = await this.postService.deletePost(id, userId);
+
+      if (!deleted) {
+        return ResponseHelper.notFound(c, "Post not found or unauthorized");
+      }
+
+      return ResponseHelper.success(c, null, "Post deleted successfully");
     } catch (error) {
-      throw new HTTPException(500, {
-        message: "Failed to delete post",
-      });
+      return ResponseHelper.error(c, "Failed to delete post", 500);
     }
   }
 
@@ -113,21 +110,24 @@ export class PostController {
     try {
       const userId = c.get("userId");
       const { page = 1, limit = 10 } = c.req.query();
+
+      if (!userId) {
+        return ResponseHelper.unauthorized(c, "User authentication required");
+      }
+
       const posts = await this.postService.getPostsByUser(
         userId,
         Number(page),
         Number(limit)
       );
 
-      return c.json({
-        success: true,
-        message: "User posts retrieved successfully",
-        data: posts,
-      });
+      return ResponseHelper.success(
+        c,
+        posts,
+        "User posts retrieved successfully"
+      );
     } catch (error) {
-      throw new HTTPException(500, {
-        message: "Failed to retrieve user posts",
-      });
+      return ResponseHelper.error(c, "Failed to retrieve user posts", 500);
     }
   }
 }

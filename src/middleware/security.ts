@@ -241,7 +241,7 @@ export const errorHandler = (err: Error, c: Context) => {
     return c.json(
       {
         success: false,
-        error: err.message,
+        message: err.message,
         timestamp: new Date().toISOString(),
       },
       err.status
@@ -255,7 +255,7 @@ export const errorHandler = (err: Error, c: Context) => {
   return c.json(
     {
       success: false,
-      error: message,
+      message: message,
       timestamp: new Date().toISOString(),
     },
     500

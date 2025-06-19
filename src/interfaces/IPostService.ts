@@ -1,18 +1,18 @@
-import { Post } from "../database/simple";
+import { Post } from "../interfaces/IDatabase";
 import { CreatePostDto, UpdatePostDto } from "../dtos";
 
 export interface IPostService {
-  createPost(postData: CreatePostDto, userId: number): Promise<Post>;
-  findById(id: number): Promise<Post | undefined>;
+  createPost(postData: CreatePostDto, userId: string): Promise<Post>;
+  findById(id: string): Promise<Post | undefined>;
   updatePost(
-    id: number,
+    id: string,
     postData: UpdatePostDto,
-    userId: number
+    userId: string
   ): Promise<Post | undefined>;
-  deletePost(id: number, userId: number): Promise<boolean>;
+  deletePost(id: string, userId: string): Promise<boolean>;
   getAllPosts(page?: number, limit?: number): Promise<Post[]>;
   getPostsByUser(
-    userId: number,
+    userId: string,
     page?: number,
     limit?: number
   ): Promise<Post[]>;

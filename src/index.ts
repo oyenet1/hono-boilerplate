@@ -9,6 +9,7 @@ import {
 } from "./middleware/security";
 import { routes } from "./routes";
 import { redisManager } from "./config/redis";
+import { ResponseHelper } from "./utils/response";
 
 const app = new Hono();
 
@@ -22,19 +23,26 @@ app.route("/api", routes);
 
 // Root route
 app.get("/", (c) => {
-  return c.json({
-    success: true,
-    message: "Hono MVC Boilerplate API - Secure Edition",
+  const appData = {
     version: "2.0.0",
     features: [
       "JWT Authentication",
       "Redis Sessions",
       "Rate Limiting",
       "Security Headers",
+      "Drizzle ORM",
+      "CUID2 IDs",
+      "Dependency Injection",
     ],
     documentation: "/api/health",
     timestamp: new Date().toISOString(),
-  });
+  };
+
+  return ResponseHelper.success(
+    c,
+    appData,
+    "Hono MVC Boilerplate API - Secure Edition"
+  );
 });
 
 // Error handling
@@ -42,14 +50,7 @@ app.onError(errorHandler);
 
 // 404 handler
 app.notFound((c) => {
-  return c.json(
-    {
-      success: false,
-      error: "Route not found",
-      timestamp: new Date().toISOString(),
-    },
-    404
-  );
+  return ResponseHelper.notFound(c, "Route not found");
 });
 
 // Graceful shutdown handling

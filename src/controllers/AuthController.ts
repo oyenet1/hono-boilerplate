@@ -3,6 +3,7 @@ import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { IAuthService } from "../interfaces/IAuthService";
 import { TYPES } from "../di/types";
+import { ResponseHelper } from "../utils/response";
 
 @injectable()
 export class AuthController {
@@ -11,42 +12,39 @@ export class AuthController {
   async register(c: Context) {
     try {
       const userData = await c.req.json();
-      const ipAddress = c.req.header("X-Forwarded-For") || c.req.header("X-Real-IP");
-      
+      const ipAddress =
+        c.req.header("X-Forwarded-For") || c.req.header("X-Real-IP");
+
       const result = await this.authService.register(userData, ipAddress);
 
-      return c.json(
-        {
-          success: true,
-          message: "User registered successfully",
-          data: result,
-        },
-        201
-      );
+      return ResponseHelper.created(c, result, "User registered successfully");
     } catch (error) {
-      throw new HTTPException(400, {
-        message: error instanceof Error ? error.message : "Registration failed",
-      });
+      return ResponseHelper.badRequest(
+        c,
+        error instanceof Error ? error.message : "Registration failed"
+      );
     }
   }
 
   async login(c: Context) {
     try {
       const loginData = await c.req.json();
-      const ipAddress = c.req.header("X-Forwarded-For") || c.req.header("X-Real-IP");
+      const ipAddress =
+        c.req.header("X-Forwarded-For") || c.req.header("X-Real-IP");
       const userAgent = c.req.header("User-Agent");
-      
-      const result = await this.authService.login(loginData, ipAddress, userAgent);
 
-      return c.json({
-        success: true,
-        message: "Login successful",
-        data: result,
-      });
+      const result = await this.authService.login(
+        loginData,
+        ipAddress,
+        userAgent
+      );
+
+      return ResponseHelper.success(c, result, "Login successful");
     } catch (error) {
-      throw new HTTPException(401, {
-        message: error instanceof Error ? error.message : "Login failed",
-      });
+      return ResponseHelper.unauthorized(
+        c,
+        error instanceof Error ? error.message : "Login failed"
+      );
     }
   }
 
@@ -54,7 +52,7 @@ export class AuthController {
     try {
       const sessionData = c.get("sessionData");
       if (!sessionData) {
-        throw new HTTPException(400, { message: "No active session found" });
+        return ResponseHelper.badRequest(c, "No active session found");
       }
 
       // Extract session ID from the auth header
@@ -65,40 +63,41 @@ export class AuthController {
         // For now, we'll implement a simple logout
       }
 
-      return c.json({
-        success: true,
-        message: "Logout successful",
-      });
+      return ResponseHelper.success(c, null, "Logout successful");
     } catch (error) {
-      throw new HTTPException(500, {
-        message: error instanceof Error ? error.message : "Logout failed",
-      });
+      return ResponseHelper.error(
+        c,
+        error instanceof Error ? error.message : "Logout failed",
+        500
+      );
     }
   }
 
   async refreshSession(c: Context) {
     try {
       const { sessionId } = await c.req.json();
-      
+
       if (!sessionId) {
-        throw new HTTPException(400, { message: "Session ID required" });
+        return ResponseHelper.badRequest(c, "Session ID required");
       }
 
       const result = await this.authService.refreshSession(sessionId);
-      
+
       if (!result) {
-        throw new HTTPException(401, { message: "Invalid session" });
+        return ResponseHelper.unauthorized(c, "Invalid session");
       }
 
-      return c.json({
-        success: true,
-        message: "Session refreshed successfully",
-        data: result,
-      });
+      return ResponseHelper.success(
+        c,
+        result,
+        "Session refreshed successfully"
+      );
     } catch (error) {
-      throw new HTTPException(500, {
-        message: error instanceof Error ? error.message : "Session refresh failed",
-      });
+      return ResponseHelper.error(
+        c,
+        error instanceof Error ? error.message : "Session refresh failed",
+        500
+      );
     }
   }
 
@@ -106,15 +105,13 @@ export class AuthController {
     try {
       const userId = c.get("userId");
       // Implementation would get user profile
-      return c.json({
-        success: true,
-        message: "Profile retrieved successfully",
-        data: { userId },
-      });
+      return ResponseHelper.success(
+        c,
+        { userId },
+        "Profile retrieved successfully"
+      );
     } catch (error) {
-      throw new HTTPException(500, {
-        message: "Failed to retrieve profile",
-      });
+      return ResponseHelper.error(c, "Failed to retrieve profile", 500);
     }
   }
 }

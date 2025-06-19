@@ -3,6 +3,7 @@ import { authRoute } from "./authRoute";
 import { userRoute } from "./userRoute";
 import { postRoute } from "./postRoute";
 import { rateLimits } from "../middleware/security";
+import { ResponseHelper } from "../utils/response";
 
 const routes = new Hono();
 
@@ -13,12 +14,14 @@ routes.route("/posts", postRoute);
 
 // Health check endpoint with public rate limiting
 routes.get("/health", rateLimits.public, (c) => {
-  return c.json({
-    success: true,
-    message: "API is healthy",
+  const healthData = {
     timestamp: new Date().toISOString(),
     redis: "connected", // You can check actual Redis status here
-  });
+    database: "connected",
+    version: "2.0.0",
+  };
+
+  return ResponseHelper.success(c, healthData, "API is healthy");
 });
 
 export { routes };

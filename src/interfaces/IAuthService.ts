@@ -6,7 +6,7 @@ export interface IAuthService {
     ipAddress?: string
   ): Promise<{
     user: {
-      id: number;
+      id: string;
       name: string;
       email: string;
       createdAt: Date;
@@ -21,7 +21,7 @@ export interface IAuthService {
     userAgent?: string
   ): Promise<{
     user: {
-      id: number;
+      id: string;
       name: string;
       email: string;
       createdAt: Date;
@@ -36,5 +36,5 @@ export interface IAuthService {
 
   refreshSession(sessionId: string): Promise<{ token: string } | null>;
 
-  invalidateAllUserSessions(userId: number): Promise<void>;
+  invalidateAllUserSessions(userId: string): Promise<void>;
 }
