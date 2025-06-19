@@ -22,7 +22,7 @@ export class TokenExtractor {
     if (!authHeader) {
       if (throwOnMissing) {
         throw new HTTPException(401, {
-          message: "Authentication required. Please login to continue",
+          message: "Invalid token: Authentication required",
         });
       }
       return null;

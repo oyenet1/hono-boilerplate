@@ -301,4 +301,9 @@ export class SecureAuthService implements IAuthService {
     const key = `login-attempt:${email}:${ipAddress || ""}`;
     await redisManager.del(key);
   }
+
+  async getProfile(userId: string): Promise<any | null> {
+    // Use userService to fetch user profile
+    return this.userService.findById(userId);
+  }
 }

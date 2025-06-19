@@ -6,6 +6,7 @@ import { container } from "../di/container";
 import { TYPES } from "../di/types";
 import { SecureAuthService } from "../services/SecureAuthService";
 import { TokenExtractor } from "../utils/tokenExtractor";
+import { ResponseHelper } from "../utils/response";
 
 export interface RateLimitConfig {
   windowMs: number;
@@ -16,16 +17,22 @@ export interface RateLimitConfig {
 }
 
 export const secureAuthMiddleware = async (c: Context, next: Next) => {
-  const token = TokenExtractor.getToken(c);
+  const token = TokenExtractor.getTokenSafe(c);
+
+  if (!token) {
+    return ResponseHelper.error(c, "Authentication token is required", 401);
+  }
 
   try {
     const authService = container.get<SecureAuthService>(TYPES.AuthService);
     const sessionData = await authService.verifySession(token);
 
     if (!sessionData) {
-      throw new HTTPException(401, {
-        message: "Your session has expired. Please login again",
-      });
+      return ResponseHelper.error(
+        c,
+        "Your session has expired. Please login again",
+        401
+      );
     }
 
     // Set user context
@@ -43,13 +50,12 @@ export const secureAuthMiddleware = async (c: Context, next: Next) => {
 
     await next();
   } catch (error) {
-    if (error instanceof HTTPException) {
-      throw error;
-    }
     console.error("Authentication error:", error);
-    throw new HTTPException(401, {
-      message: "Authentication failed. Please login to continue",
-    });
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Authentication failed. Please login to continue";
+    return ResponseHelper.error(c, message, 401);
   }
 };
 

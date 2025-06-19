@@ -37,4 +37,6 @@ export interface IAuthService {
   refreshSession(sessionId: string): Promise<{ token: string } | null>;
 
   invalidateAllUserSessions(userId: string): Promise<void>;
+
+  getProfile(userId: string): Promise<any | null>;
 }

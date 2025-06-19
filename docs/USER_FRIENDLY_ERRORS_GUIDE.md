@@ -16,7 +16,7 @@ All error messages have been updated to be clear, actionable, and user-friendly.
 
 ### 401 - Unauthorized
 
-- **Message**: "Authentication required. Please login to continue"
+- **Message**: "Invalid token: Authentication required"
 - **When**: User is not authenticated
 - **User Action**: Login with valid credentials
 

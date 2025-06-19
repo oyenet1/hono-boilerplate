@@ -69,7 +69,7 @@ export class ResponseHelper {
 
   static unauthorized(
     c: Context,
-    message: string = "Authentication required. Please login to continue"
+    message: string = "Invalid token: Authentication required"
   ) {
     return this.error(c, message, 401);
   }

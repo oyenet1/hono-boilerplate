@@ -20,10 +20,11 @@ export class UserController {
         Number(page),
         Number(limit)
       );
-
       return ResponseHelper.success(c, users, "Users retrieved successfully");
     } catch (error) {
-      throw handleDatabaseError(error);
+      const message =
+        error instanceof Error ? error.message : "Failed to get users";
+      return ResponseHelper.error(c, message, 500);
     }
   }
 
@@ -31,21 +32,17 @@ export class UserController {
     try {
       const id = c.req.param("id");
       if (!id) {
-        throw new BadRequestError("User ID is required");
+        return ResponseHelper.error(c, "User ID is required", 400);
       }
-
       const user = await this.userService.findById(id);
-
       if (!user) {
-        throw new NotFoundError("User");
+        return ResponseHelper.error(c, "User not found", 404);
       }
-
       return ResponseHelper.success(c, user, "User retrieved successfully");
     } catch (error) {
-      if (error instanceof NotFoundError || error instanceof BadRequestError) {
-        throw error;
-      }
-      throw handleDatabaseError(error);
+      const message =
+        error instanceof Error ? error.message : "Failed to get user";
+      return ResponseHelper.error(c, message, 500);
     }
   }
 
@@ -53,22 +50,18 @@ export class UserController {
     try {
       const id = c.req.param("id");
       if (!id) {
-        throw new BadRequestError("User ID is required");
+        return ResponseHelper.error(c, "User ID is required", 400);
       }
-
       const userData = await c.req.json();
       const user = await this.userService.updateUser(id, userData);
-
       if (!user) {
-        throw new NotFoundError("User");
+        return ResponseHelper.error(c, "User not found", 404);
       }
-
       return ResponseHelper.success(c, user, "User updated successfully");
     } catch (error) {
-      if (error instanceof NotFoundError || error instanceof BadRequestError) {
-        throw error;
-      }
-      throw handleDatabaseError(error);
+      const message =
+        error instanceof Error ? error.message : "Failed to update user";
+      return ResponseHelper.error(c, message, 500);
     }
   }
 
@@ -76,21 +69,17 @@ export class UserController {
     try {
       const id = c.req.param("id");
       if (!id) {
-        throw new BadRequestError("User ID is required");
+        return ResponseHelper.error(c, "User ID is required", 400);
       }
-
       const deleted = await this.userService.deleteUser(id);
-
       if (!deleted) {
-        throw new NotFoundError("User");
+        return ResponseHelper.error(c, "User not found", 404);
       }
-
       return ResponseHelper.success(c, null, "User deleted successfully");
     } catch (error) {
-      if (error instanceof NotFoundError || error instanceof BadRequestError) {
-        throw error;
-      }
-      throw handleDatabaseError(error);
+      const message =
+        error instanceof Error ? error.message : "Failed to delete user";
+      return ResponseHelper.error(c, message, 500);
     }
   }
 }

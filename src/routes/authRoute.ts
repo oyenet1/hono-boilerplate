@@ -5,6 +5,7 @@ import { AuthController } from "../controllers/AuthController";
 import { rateLimits } from "../middleware/security";
 import { validateJson } from "../utils/zValidator";
 import { CreateUserDto, LoginDto } from "../dtos";
+import { secureAuthMiddleware } from "../middleware/security";
 
 const authRoute = new Hono();
 const authController = container.get<AuthController>(TYPES.AuthController);
@@ -21,5 +22,8 @@ authRoute.post("/login", validateJson(LoginDto), (c) =>
 );
 authRoute.post("/logout", (c) => authController.logout(c));
 authRoute.post("/refresh", (c) => authController.refreshSession(c));
+authRoute.get("/profile", secureAuthMiddleware, (c) =>
+  authController.profile(c)
+);
 
 export { authRoute };

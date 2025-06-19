@@ -95,7 +95,7 @@ Extract token with additional length validation.
 
 All error messages are user-friendly and actionable:
 
-- **Missing Authorization header**: "Authentication required. Please login to continue"
+- **Missing Authorization header**: "Invalid token: Authentication required"
 - **Invalid format**: "Invalid authentication format. Please use Bearer token"
 - **Empty token**: "Authentication token is empty. Please provide a valid token"
 - **Token too short**: "Authentication token is too short. Please provide a valid token"

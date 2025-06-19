@@ -108,9 +108,7 @@ export class NotFoundError extends HTTPException {
 }
 
 export class UnauthorizedError extends HTTPException {
-  constructor(
-    message: string = "Authentication required. Please login to continue"
-  ) {
+  constructor(message: string = "Invalid token: Authentication required") {
     super(401, { message });
   }
 }

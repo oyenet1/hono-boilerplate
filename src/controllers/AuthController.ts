@@ -24,13 +24,9 @@ export class AuthController {
 
       return ResponseHelper.created(c, result, "User registered successfully");
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.message.includes("already exists")) {
-          throw new BadRequestError(error.message);
-        }
-        throw handleDatabaseError(error);
-      }
-      throw new BadRequestError("Registration failed");
+      const message =
+        error instanceof Error ? error.message : "Registration failed";
+      return ResponseHelper.error(c, message, 400);
     }
   }
 
@@ -49,21 +45,8 @@ export class AuthController {
 
       return ResponseHelper.success(c, result, "Login successful");
     } catch (error) {
-      if (error instanceof Error) {
-        if (
-          error.message.includes("Invalid credentials") ||
-          error.message.includes("not found")
-        ) {
-          throw new UnauthorizedError("Invalid email or password");
-        }
-        if (
-          error.message.includes("blocked") ||
-          error.message.includes("attempts")
-        ) {
-          throw new UnauthorizedError(error.message);
-        }
-      }
-      throw new UnauthorizedError("Login failed");
+      const message = error instanceof Error ? error.message : "Login failed";
+      return ResponseHelper.error(c, message, 401);
     }
   }
 
@@ -71,7 +54,7 @@ export class AuthController {
     try {
       const sessionData = c.get("sessionData");
       if (!sessionData) {
-        throw new BadRequestError("No active session found");
+        return ResponseHelper.error(c, "No active session found", 400);
       }
 
       // Extract token using the TokenExtractor utility
@@ -83,10 +66,8 @@ export class AuthController {
 
       return ResponseHelper.success(c, null, "Logout successful");
     } catch (error) {
-      if (error instanceof BadRequestError) {
-        throw error;
-      }
-      throw new BadRequestError("Logout failed");
+      const message = error instanceof Error ? error.message : "Logout failed";
+      return ResponseHelper.error(c, message, 400);
     }
   }
 
@@ -95,13 +76,13 @@ export class AuthController {
       const { sessionId } = await c.req.json();
 
       if (!sessionId) {
-        throw new BadRequestError("Session ID required");
+        return ResponseHelper.error(c, "Session ID required", 400);
       }
 
       const result = await this.authService.refreshSession(sessionId);
 
       if (!result) {
-        throw new UnauthorizedError("Invalid session");
+        return ResponseHelper.error(c, "Invalid session", 401);
       }
 
       return ResponseHelper.success(
@@ -110,13 +91,9 @@ export class AuthController {
         "Session refreshed successfully"
       );
     } catch (error) {
-      if (
-        error instanceof BadRequestError ||
-        error instanceof UnauthorizedError
-      ) {
-        throw error;
-      }
-      throw new BadRequestError("Session refresh failed");
+      const message =
+        error instanceof Error ? error.message : "Session refresh failed";
+      return ResponseHelper.error(c, message, 400);
     }
   }
 
@@ -124,20 +101,20 @@ export class AuthController {
     try {
       const userId = c.get("userId");
       if (!userId) {
-        throw new UnauthorizedError("User not authenticated");
+        return ResponseHelper.error(c, "User not authenticated", 401);
       }
 
-      // Implementation would get user profile
-      return ResponseHelper.success(
-        c,
-        { userId },
-        "Profile retrieved successfully"
-      );
-    } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        throw error;
+      // Fetch user profile from the authService (or userService if preferred)
+      const user = await this.authService.getProfile(userId);
+      if (!user) {
+        return ResponseHelper.error(c, "User not found", 404);
       }
-      throw new BadRequestError("Failed to retrieve profile");
+
+      return ResponseHelper.success(c, user, "Profile retrieved successfully");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to retrieve profile";
+      return ResponseHelper.error(c, message, 400);
     }
   }
 }
