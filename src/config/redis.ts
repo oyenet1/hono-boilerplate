@@ -1,18 +1,18 @@
 import Redis from "ioredis";
-import { config } from "./app";
 
 // Redis configuration for sessions and caching
 const redisConfig = {
   host: process.env.REDIS_HOST || "localhost",
   port: parseInt(process.env.REDIS_PORT || "6379"),
-  password: process.env.REDIS_PASSWORD,
+  password: process.env.REDIS_PASSWORD || undefined,
   db: parseInt(process.env.REDIS_DB || "0"),
   keyPrefix: process.env.REDIS_KEY_PREFIX || "hono:",
   retryDelayOnFailover: 100,
   maxRetriesPerRequest: 3,
-  lazyConnect: true,
+  lazyConnect: false, // Changed to false for immediate connection
   disconnectTimeout: 2000,
   commandTimeout: 5000,
+  connectTimeout: 10000,
 };
 
 class RedisManager {
@@ -23,6 +23,8 @@ class RedisManager {
   private constructor() {
     this.client = new Redis(redisConfig);
     this.setupEventHandlers();
+    // Try to connect immediately
+    this.connect();
   }
 
   public static getInstance(): RedisManager {
@@ -30,6 +32,17 @@ class RedisManager {
       RedisManager.instance = new RedisManager();
     }
     return RedisManager.instance;
+  }
+
+  private async connect(): Promise<void> {
+    try {
+      await this.client.ping();
+      this.isConnected = true;
+      console.log("Redis connected successfully");
+    } catch (error) {
+      console.error("Redis connection failed:", error);
+      this.isConnected = false;
+    }
   }
 
   private setupEventHandlers(): void {

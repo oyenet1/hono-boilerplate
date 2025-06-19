@@ -5,8 +5,6 @@ export default {
   out: "./src/database/migrations",
   dialect: "postgresql",
   dbCredentials: {
-    url:
-      process.env.DATABASE_URL ||
-      "postgresql://localhost:5432/hono_boilerplate",
+    url: process.env.DATABASE_URL!,
   },
 } satisfies Config;

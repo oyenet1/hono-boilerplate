@@ -1,6 +1,6 @@
 import { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { verify } from "hono/utils/jwt";
+import { verify } from "hono/jwt";
 import { config } from "../config/app";
 import { TokenExtractor } from "../utils/tokenExtractor";
 

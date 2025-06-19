@@ -4,14 +4,18 @@ A Laravel-inspired MVC structure for Hono.js with TypeScript, built for Bun runt
 
 ## Features
 
-- 🏗️ **MVC Architecture** - Organized like Laravel with controllers, services, models, and routes
-- 🔐 **Authentication** - JWT-based auth with bcrypt password hashing
-- 📊 **Database** - SQLite with Drizzle ORM
-- ✅ **Validation** - Zod schemas for request validation
-- 🛡️ **Middleware** - CORS, authentication, logging, and error handling
-- 📝 **DTOs** - Type-safe data transfer objects
-- 🌱 **Database Seeding** - Sample data for development
-- 📁 **Organized Structure** - Clean separation of concerns
+- 🏗️ **MVC Architecture** - Laravel-inspired structure with controllers, services, and routes
+- 🔐 **JWT Authentication** - Secure authentication with Redis-backed sessions
+- �️ **PostgreSQL Database** - Production-ready database with Drizzle ORM
+- 📊 **Redis Integration** - Caching, sessions, and rate limiting
+- ✅ **Input Validation** - Zod schemas with user-friendly error messages
+- 🛡️ **Security Features** - CORS, security headers, rate limiting, and authentication
+- 🧪 **Comprehensive Testing** - Unit and integration tests with Bun
+- ⚡ **Dependency Injection** - Inversify container for clean architecture
+- 🚨 **Global Error Handling** - Consistent error responses and logging
+- 📝 **Type Safety** - Full TypeScript support with DTOs and schemas
+- 🌱 **Database Migrations** - Version-controlled schema changes
+- 📁 **Clean Architecture** - Organized codebase with separation of concerns
 
 ## Project Structure
 
@@ -215,9 +219,31 @@ Handle cross-cutting concerns:
 - **[TypeScript](https://www.typescriptlang.org/)** - Type safety
 - **[Drizzle ORM](https://orm.drizzle.team/)** - Type-safe database operations
 - **[Zod](https://zod.dev/)** - Schema validation
-- **[SQLite](https://www.sqlite.org/)** - Database
+- **[PostgreSQL](https://www.postgresql.org/)** - Database
+- **[Redis](https://redis.io/)** - Caching and sessions
 - **[JWT](https://jwt.io/)** - Authentication tokens
 - **[bcrypt](https://www.npmjs.com/package/bcryptjs)** - Password hashing
+- **[Inversify](https://inversify.io/)** - Dependency injection
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the [`docs/`](./docs/) folder:
+
+### **Quick Reference**
+
+- [**📖 Documentation Index**](./docs/README.md) - Complete guide overview
+- [**🗄️ Database Guide**](./docs/DATABASE_GUIDE.md) - PostgreSQL & Drizzle setup
+- [**🔒 Security Guide**](./docs/SECURITY_GUIDE.md) - Authentication & security features
+- [**🧪 Test Guide**](./docs/TEST_GUIDE.md) - Testing strategies & examples
+
+### **Advanced Topics**
+
+- [**⚡ Dependency Injection**](./docs/DI_GUIDE.md) - Inversify container patterns
+- [**🚨 Error Handling**](./docs/ERROR_HANDLERS_GUIDE.md) - Global error management
+- [**✅ Validation**](./docs/VALIDATOR_GUIDE.md) - Zod schemas & custom validators
+- [**🛡️ Token Extraction**](./docs/TOKEN_EXTRACTOR_GUIDE.md) - JWT utilities
+
+Visit the [**docs folder**](./docs/) for the complete documentation library.
 
 ## License
 

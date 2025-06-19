@@ -8,6 +8,7 @@
     "seed": "bun run src/database/seed.ts",
     "test": "bun test",
     "test:watch": "bun test --watch",
+    "test:redis": "bun run test-redis.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",

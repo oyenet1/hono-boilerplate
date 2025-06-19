@@ -9,7 +9,7 @@ import { config } from "../config/app";
 import { redisManager } from "../config/redis";
 
 interface SessionData {
-  userId: number;
+  userId: string;
   email: string;
   loginTime: number;
   ipAddress?: string;
@@ -183,7 +183,7 @@ export class SecureAuthService implements IAuthService {
     }
   }
 
-  async invalidateAllUserSessions(userId: number): Promise<void> {
+  async invalidateAllUserSessions(userId: string): Promise<void> {
     try {
       // This would require a more complex implementation to track all user sessions
       // For now, we'll implement a basic version

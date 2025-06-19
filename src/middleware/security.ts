@@ -56,13 +56,35 @@ export const secureAuthMiddleware = async (c: Context, next: Next) => {
 export const createRateLimitMiddleware = (rateLimitConfig: RateLimitConfig) => {
   return async (c: Context, next: Next) => {
     try {
-      // Get identifier for rate limiting (IP + User ID if authenticated)
+      // Get IP address with proper header precedence
       const ipAddress =
-        c.req.header("X-Forwarded-For") ||
+        c.req.header("X-Forwarded-For")?.split(",")[0]?.trim() ||
         c.req.header("X-Real-IP") ||
+        c.req.header("CF-Connecting-IP") || // Cloudflare
         "unknown";
+
       const userId = c.get("userId");
-      const identifier = userId ? `user:${userId}` : `ip:${ipAddress}`;
+      const userAgent = c.req.header("User-Agent") || "unknown";
+
+      // Create multiple rate limiting strategies
+      let identifier: string;
+      let rateLimitMax = rateLimitConfig.max;
+
+      if (userId) {
+        // For authenticated users: Use user ID (most accurate)
+        identifier = `user:${userId}`;
+      } else {
+        // For unauthenticated users: Use combination of IP + User Agent
+        // This helps differentiate between different browsers/devices behind same NAT
+        const browserFingerprint = Buffer.from(userAgent)
+          .toString("base64")
+          .substring(0, 16);
+        identifier = `ip:${ipAddress}:ua:${browserFingerprint}`;
+
+        // Increase limits for IP-based limiting to account for NAT scenarios
+        // Scale up the limit for shared IPs
+        rateLimitMax = Math.floor(rateLimitConfig.max * 1.5); // 50% higher for shared networks
+      }
 
       // Get route path for specific rate limiting
       const route = c.req.path;
@@ -75,26 +97,29 @@ export const createRateLimitMiddleware = (rateLimitConfig: RateLimitConfig) => {
         await redisManager.incrementRateLimit(
           rateLimitKey,
           windowSeconds,
-          rateLimitConfig.max
+          rateLimitMax
         );
 
       // Set rate limit headers
-      c.header("X-RateLimit-Limit", rateLimitConfig.max.toString());
+      c.header("X-RateLimit-Limit", rateLimitMax.toString());
       c.header(
         "X-RateLimit-Remaining",
-        Math.max(0, rateLimitConfig.max - count).toString()
+        Math.max(0, rateLimitMax - count).toString()
       );
       c.header("X-RateLimit-Reset", new Date(resetTime).toISOString());
+      c.header("X-RateLimit-Strategy", userId ? "user-based" : "ip-ua-based");
 
       if (!allowed) {
         const retryAfter = Math.ceil((resetTime - Date.now()) / 1000);
         c.header("Retry-After", retryAfter.toString());
 
-        throw new HTTPException(429, {
-          message:
-            rateLimitConfig.message ||
-            "Too many requests, please try again later",
-        });
+        // Enhanced error message for NAT scenarios
+        const message = userId
+          ? rateLimitConfig.message ||
+            "Too many requests, please try again later"
+          : "Rate limit exceeded. If you're on a shared network, please try again later or login to increase your limits";
+
+        throw new HTTPException(429, { message });
       }
 
       await next();
@@ -115,33 +140,33 @@ export const createRateLimitMiddleware = (rateLimitConfig: RateLimitConfig) => {
   };
 };
 
-// Predefined rate limit configurations
+// Predefined rate limit configurations - NAT-friendly
 export const rateLimits = {
   // Strict rate limiting for authentication endpoints
   auth: createRateLimitMiddleware({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // 5 attempts per 15 minutes
+    max: 10, // Increased from 5 to 10 for shared networks
     message: "Too many authentication attempts, please try again later",
   }),
 
   // Moderate rate limiting for API endpoints
   api: createRateLimitMiddleware({
     windowMs: 60 * 1000, // 1 minute
-    max: 60, // 60 requests per minute
+    max: 120, // Increased from 60 to 120 for shared networks
     message: "Rate limit exceeded, please slow down",
   }),
 
   // Lenient rate limiting for public endpoints
   public: createRateLimitMiddleware({
     windowMs: 60 * 1000, // 1 minute
-    max: 100, // 100 requests per minute
+    max: 200, // Increased from 100 to 200 for shared networks
     message: "Rate limit exceeded",
   }),
 
   // Very strict for sensitive operations
   sensitive: createRateLimitMiddleware({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 3, // 3 attempts per hour
+    max: 5, // Slightly increased from 3 to 5
     message: "Too many sensitive operations, please try again later",
   }),
 };

@@ -26,7 +26,7 @@ describe("UserService", () => {
       const user = await userService.createUser(userData);
 
       expect(user).toBeDefined();
-      expect(user.id).toBe(1);
+      expect(typeof user.id).toBe("string");
       expect(user.name).toBe(userData.name);
       expect(user.email).toBe(userData.email);
       expect(user.password).toBe(userData.password);
@@ -65,7 +65,7 @@ describe("UserService", () => {
     });
 
     test("should return undefined for non-existent user", async () => {
-      const user = await userService.findById(999);
+      const user = await userService.findById("999");
       expect(user).toBeUndefined();
     });
   });
@@ -131,7 +131,7 @@ describe("UserService", () => {
     });
 
     test("should return false for non-existent user", async () => {
-      const deleted = await userService.deleteUser(999);
+      const deleted = await userService.deleteUser("999");
       expect(deleted).toBe(false);
     });
   });

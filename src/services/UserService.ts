@@ -1,27 +1,24 @@
-import { inject, injectable } from 'inversify';
-import type { IUserService } from '../interfaces/IUserService';
-import type { IDatabase } from '../interfaces/IDatabase';
-import { TYPES } from '../di/types';
-import { User } from '../database/simple';
-import { CreateUserDto, UpdateUserDto } from '../dtos';
+import { inject, injectable } from "inversify";
+import type { IUserService } from "../interfaces/IUserService";
+import type { IDatabase, User } from "../interfaces/IDatabase";
+import { TYPES } from "../di/types";
+import { CreateUserDto, UpdateUserDto } from "../dtos";
 
 @injectable()
 export class UserService implements IUserService {
-  constructor(
-    @inject(TYPES.Database) private database: IDatabase
-  ) {}
+  constructor(@inject(TYPES.Database) private database: IDatabase) {}
 
   async createUser(userData: CreateUserDto): Promise<User> {
     const existingUser = await this.findByEmail(userData.email);
     if (existingUser) {
-      throw new Error('User with this email already exists');
+      throw new Error("User with this email already exists");
     }
 
     const user = await this.database.createUser(userData);
     return user;
   }
 
-  async findById(id: number): Promise<User | undefined> {
+  async findById(id: string): Promise<User | undefined> {
     return await this.database.findUserById(id);
   }
 
@@ -29,11 +26,14 @@ export class UserService implements IUserService {
     return await this.database.findUserByEmail(email);
   }
 
-  async updateUser(id: number, userData: UpdateUserDto): Promise<User | undefined> {
+  async updateUser(
+    id: string,
+    userData: UpdateUserDto
+  ): Promise<User | undefined> {
     return await this.database.updateUser(id, userData);
   }
 
-  async deleteUser(id: number): Promise<boolean> {
+  async deleteUser(id: string): Promise<boolean> {
     return await this.database.deleteUser(id);
   }
 

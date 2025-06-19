@@ -5,20 +5,24 @@ This directory contains comprehensive documentation for the Hono MVC Boilerplate
 ## 📖 **Table of Contents**
 
 ### **Architecture & Setup**
+
 - [**Database Guide**](./DATABASE_GUIDE.md) - PostgreSQL, Drizzle ORM, migrations, and database setup
 - [**Drizzle Setup Complete**](./DRIZZLE_SETUP_COMPLETE.md) - Complete Drizzle ORM configuration details
 - [**Dependency Injection Guide**](./DI_GUIDE.md) - Inversify container setup and usage patterns
 
 ### **Security & Authentication**
+
 - [**Security Guide**](./SECURITY_GUIDE.md) - CORS, headers, rate limiting, and security best practices
 - [**Token Extractor Guide**](./TOKEN_EXTRACTOR_GUIDE.md) - JWT token extraction utilities and patterns
 
 ### **Error Handling & Validation**
+
 - [**Error Handlers Guide**](./ERROR_HANDLERS_GUIDE.md) - Global error handling and custom error classes
 - [**User-Friendly Errors Guide**](./USER_FRIENDLY_ERRORS_GUIDE.md) - Comprehensive error messages for better UX
 - [**Validator Guide**](./VALIDATOR_GUIDE.md) - Zod validation, custom validators, and error formatting
 
 ### **Testing & Monitoring**
+
 - [**Test Guide**](./TEST_GUIDE.md) - Testing strategies, setup, and best practices
 - [**Console Logging Summary**](./CONSOLE_LOGGING_SUMMARY.md) - Logging patterns and health monitoring
 

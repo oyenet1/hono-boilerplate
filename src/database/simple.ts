@@ -1,8 +1,10 @@
 // Simple database implementation for development
 // This is a temporary solution until Drizzle is properly configured
 
+import { createId } from "@paralleldrive/cuid2";
+
 interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   password: string;
@@ -11,10 +13,10 @@ interface User {
 }
 
 interface Post {
-  id: number;
+  id: string;
   title: string;
   content: string;
-  userId: number;
+  userId: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,8 +24,12 @@ interface Post {
 class SimpleDB {
   private users: User[] = [];
   private posts: Post[] = [];
-  private userIdCounter = 1;
-  private postIdCounter = 1;
+
+  // Clear method for testing
+  clear(): void {
+    this.users = [];
+    this.posts = [];
+  }
 
   // User methods
   async createUser(
@@ -31,7 +37,7 @@ class SimpleDB {
   ): Promise<User> {
     const user: User = {
       ...userData,
-      id: this.userIdCounter++,
+      id: createId(),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -39,7 +45,7 @@ class SimpleDB {
     return user;
   }
 
-  async findUserById(id: number): Promise<User | undefined> {
+  async findUserById(id: string): Promise<User | undefined> {
     return this.users.find((user) => user.id === id);
   }
 
@@ -48,7 +54,7 @@ class SimpleDB {
   }
 
   async updateUser(
-    id: number,
+    id: string,
     userData: Partial<Omit<User, "id" | "createdAt">>
   ): Promise<User | undefined> {
     const userIndex = this.users.findIndex((user) => user.id === id);
@@ -62,7 +68,7 @@ class SimpleDB {
     return this.users[userIndex];
   }
 
-  async deleteUser(id: number): Promise<boolean> {
+  async deleteUser(id: string): Promise<boolean> {
     const userIndex = this.users.findIndex((user) => user.id === id);
     if (userIndex === -1) return false;
     this.users.splice(userIndex, 1);
@@ -80,7 +86,7 @@ class SimpleDB {
   ): Promise<Post> {
     const post: Post = {
       ...postData,
-      id: this.postIdCounter++,
+      id: createId(),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -88,14 +94,14 @@ class SimpleDB {
     return post;
   }
 
-  async findPostById(id: number): Promise<Post | undefined> {
+  async findPostById(id: string): Promise<Post | undefined> {
     return this.posts.find((post) => post.id === id);
   }
 
   async updatePost(
-    id: number,
+    id: string,
     postData: Partial<Omit<Post, "id" | "createdAt" | "userId">>,
-    userId: number
+    userId: string
   ): Promise<Post | undefined> {
     const postIndex = this.posts.findIndex(
       (post) => post.id === id && post.userId === userId
@@ -110,7 +116,7 @@ class SimpleDB {
     return this.posts[postIndex];
   }
 
-  async deletePost(id: number, userId: number): Promise<boolean> {
+  async deletePost(id: string, userId: string): Promise<boolean> {
     const postIndex = this.posts.findIndex(
       (post) => post.id === id && post.userId === userId
     );
@@ -125,7 +131,7 @@ class SimpleDB {
   }
 
   async getPostsByUser(
-    userId: number,
+    userId: string,
     page: number = 1,
     limit: number = 10
   ): Promise<Post[]> {

@@ -1,142 +1,77 @@
 import { injectable } from "inversify";
 import { IDatabase } from "../interfaces/IDatabase";
-import { User, Post } from "./simple";
+import { simpleDb } from "./simple";
+import type { User, Post } from "./simple";
 
 @injectable()
 export class SimpleDatabase implements IDatabase {
-  private users: User[] = [];
-  private posts: Post[] = [];
-  private userIdCounter = 1;
-  private postIdCounter = 1;
-
   // User methods
   async createUser(
     userData: Omit<User, "id" | "createdAt" | "updatedAt">
   ): Promise<User> {
-    const user: User = {
-      ...userData,
-      id: this.userIdCounter++,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.users.push(user);
-    return user;
+    return await simpleDb.createUser(userData);
   }
 
-  async findUserById(id: number): Promise<User | undefined> {
-    return this.users.find((user) => user.id === id);
+  async findUserById(id: string): Promise<User | undefined> {
+    return await simpleDb.findUserById(id);
   }
 
   async findUserByEmail(email: string): Promise<User | undefined> {
-    return this.users.find((user) => user.email === email);
+    return await simpleDb.findUserByEmail(email);
   }
 
   async updateUser(
-    id: number,
+    id: string,
     userData: Partial<Omit<User, "id" | "createdAt">>
   ): Promise<User | undefined> {
-    const userIndex = this.users.findIndex((user) => user.id === id);
-    if (userIndex === -1) return undefined;
-
-    this.users[userIndex] = {
-      ...this.users[userIndex],
-      ...userData,
-      updatedAt: new Date(),
-    };
-    return this.users[userIndex];
+    return await simpleDb.updateUser(id, userData);
   }
 
-  async deleteUser(id: number): Promise<boolean> {
-    const userIndex = this.users.findIndex((user) => user.id === id);
-    if (userIndex === -1) return false;
-    this.users.splice(userIndex, 1);
-    return true;
+  async deleteUser(id: string): Promise<boolean> {
+    return await simpleDb.deleteUser(id);
   }
 
   async getAllUsers(page: number = 1, limit: number = 10): Promise<User[]> {
-    const offset = (page - 1) * limit;
-    return this.users.slice(offset, offset + limit);
+    return await simpleDb.getAllUsers(page, limit);
   }
 
   // Post methods
   async createPost(
     postData: Omit<Post, "id" | "createdAt" | "updatedAt">
   ): Promise<Post> {
-    const post: Post = {
-      ...postData,
-      id: this.postIdCounter++,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.posts.push(post);
-    return post;
+    return await simpleDb.createPost(postData);
   }
 
-  async findPostById(id: number): Promise<Post | undefined> {
-    return this.posts.find((post) => post.id === id);
+  async findPostById(id: string): Promise<Post | undefined> {
+    return await simpleDb.findPostById(id);
   }
 
   async updatePost(
-    id: number,
+    id: string,
     postData: Partial<Omit<Post, "id" | "createdAt" | "userId">>,
-    userId: number
+    userId: string
   ): Promise<Post | undefined> {
-    const postIndex = this.posts.findIndex(
-      (post) => post.id === id && post.userId === userId
-    );
-    if (postIndex === -1) return undefined;
-
-    this.posts[postIndex] = {
-      ...this.posts[postIndex],
-      ...postData,
-      updatedAt: new Date(),
-    };
-    return this.posts[postIndex];
+    return await simpleDb.updatePost(id, postData, userId);
   }
 
-  async deletePost(id: number, userId: number): Promise<boolean> {
-    const postIndex = this.posts.findIndex(
-      (post) => post.id === id && post.userId === userId
-    );
-    if (postIndex === -1) return false;
-    this.posts.splice(postIndex, 1);
-    return true;
+  async deletePost(id: string, userId: string): Promise<boolean> {
+    return await simpleDb.deletePost(id, userId);
   }
 
   async getAllPosts(page: number = 1, limit: number = 10): Promise<Post[]> {
-    const offset = (page - 1) * limit;
-    return this.posts.slice(offset, offset + limit);
+    return await simpleDb.getAllPosts(page, limit);
   }
 
   async getPostsByUser(
-    userId: number,
+    userId: string,
     page: number = 1,
     limit: number = 10
   ): Promise<Post[]> {
-    const userPosts = this.posts.filter((post) => post.userId === userId);
-    const offset = (page - 1) * limit;
-    return userPosts.slice(offset, offset + limit);
+    return await simpleDb.getPostsByUser(userId, page, limit);
   }
 
   // Test helper methods
   clear(): void {
-    this.users = [];
-    this.posts = [];
-    this.userIdCounter = 1;
-    this.postIdCounter = 1;
-  }
-
-  seedTestData(): void {
-    this.clear();
-    // Add minimal test data
-    this.users.push({
-      id: 1,
-      name: "Test User",
-      email: "test@example.com",
-      password: "hashedpassword",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    this.userIdCounter = 2;
+    simpleDb.clear();
   }
 }
