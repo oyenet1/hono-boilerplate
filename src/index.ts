@@ -7,7 +7,7 @@ import {
   loggerMiddleware,
 } from "./middleware/security";
 import { errorHandler } from "./utils/errorHandlers";
-import { routes } from "./routes";
+import { v1 } from "./routes/v1";
 import { redisManager } from "./config/redis";
 import { ResponseHelper } from "./utils/response";
 
@@ -20,7 +20,7 @@ app.use("*", loggerMiddleware);
 app.use("*", errorHandler);
 
 // Routes
-app.route("/api", routes);
+app.route("/api", v1);
 
 // Root route
 app.get("/", (c) => {
