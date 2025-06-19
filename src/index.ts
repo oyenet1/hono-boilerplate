@@ -11,9 +11,6 @@ import { v1 } from "./routes/v1";
 import { redisManager } from "./config/redis";
 import { ResponseHelper } from "./utils/response";
 
-// Import globals first to register auto-imports
-import "./globals";
-
 const app = new Hono();
 
 // Global security middleware
