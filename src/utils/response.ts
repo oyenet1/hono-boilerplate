@@ -10,6 +10,14 @@ export interface ApiResponseData<T = any> {
     limit?: number;
     total?: number;
     totalPages?: number;
+    isFirstPage?: boolean;
+    isLastPage?: boolean;
+    hasNextPage?: boolean;
+    hasPrevPage?: boolean;
+    nextPage?: number | null;
+    prevPage?: number | null;
+    startIndex?: number;
+    endIndex?: number;
   };
 }
 

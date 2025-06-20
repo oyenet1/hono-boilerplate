@@ -158,7 +158,9 @@ export class BadRequestError extends HTTPException {
  * Database error handler
  * Converts database-specific errors to user-friendly messages
  */
-export const handleDatabaseError = (error: any): HTTPException => {
+export const handleDatabaseError = async (
+  error: any
+): Promise<HTTPException> => {
   // PostgreSQL error codes
   if (error.code === "23505") {
     // Unique violation
@@ -208,7 +210,7 @@ export const handleDatabaseError = (error: any): HTTPException => {
  * Redis error handler
  * Handles Redis connection and operation errors
  */
-export const handleRedisError = (error: any): HTTPException => {
+export const handleRedisError = async (error: any): Promise<HTTPException> => {
   console.error("Redis error:", error);
 
   if (error.message?.includes("Connection")) {
@@ -230,7 +232,7 @@ export const handleRedisError = (error: any): HTTPException => {
  * JWT error handler
  * Handles JWT-related authentication errors
  */
-export const handleJWTError = (error: any): HTTPException => {
+export const handleJWTError = async (error: any): Promise<HTTPException> => {
   if (error.message?.includes("expired")) {
     return new SessionExpiredError(
       "Your session has expired. Please login again"

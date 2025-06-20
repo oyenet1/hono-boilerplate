@@ -1,7 +1,7 @@
 import { inject, injectable } from "inversify";
 import { hash, compare } from "bcryptjs";
 import { sign, verify } from "hono/jwt";
-import type { IAuthService } from "../interfaces/IAuthService";
+import type { IAuthService, UserSession } from "../interfaces/IAuthService";
 import type { IUserService } from "../interfaces/IUserService";
 import { TYPES } from "../di/types";
 import { CreateUserDto, LoginDto } from "../dtos";
@@ -11,6 +11,68 @@ import { createId } from "@paralleldrive/cuid2";
 @injectable()
 export class AuthService implements IAuthService {
   constructor(@inject(TYPES.UserService) private userService: IUserService) {}
+
+  // Since sessions are not persisted in this basic implementation,
+  // we return empty arrays or throw errors for session management methods.
+
+  async getAllUserSessions(
+    userId: string,
+    currentSessionId?: string
+  ): Promise<UserSession[]> {
+    // No session persistence, so return only the current session if provided
+    if (currentSessionId) {
+      return [
+        {
+          id: currentSessionId,
+          userId,
+          createdAt: new Date(),
+          lastUsedAt: new Date(),
+          ipAddress: undefined,
+          userAgent: undefined,
+        },
+      ];
+    }
+    return [];
+  }
+
+  async revokeSession(sessionId: string, userId: string): Promise<boolean> {
+    // No session persistence, so nothing to revoke
+    return true;
+  }
+
+  async revokeAllOtherSessions(
+    currentSessionId: string,
+    userId: string
+  ): Promise<number> {
+    // No session persistence, so nothing to revoke
+    return 0;
+  }
+
+  async getCurrentSession(token: string): Promise<UserSession | null> {
+    // Decode token and return a session object if valid
+    try {
+      const payload = await this.verifyToken(token);
+      return {
+        id: payload.sessionId,
+        userId: payload.userId,
+        createdAt: new Date(),
+        lastUsedAt: new Date(),
+        ipAddress: undefined,
+        userAgent: undefined,
+      };
+    } catch {
+      return null;
+    }
+  }
+  revokeAllOtherSessions(
+    currentSessionId: string,
+    userId: string
+  ): Promise<number> {
+    throw new Error("Method not implemented.");
+  }
+  getCurrentSession(token: string): Promise<UserSession | null> {
+    throw new Error("Method not implemented.");
+  }
   async getProfile(userId: string): Promise<any | null> {
     const user = await this.userService.findById(userId);
     if (!user) {

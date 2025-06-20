@@ -1,15 +1,35 @@
 const logger = {
-  info: (message: string, ...args: any[]) => {
-    console.log(`[INFO] ${message}`, ...args);
+  info: async (message: string, ...args: any[]): Promise<void> => {
+    return new Promise((resolve) => {
+      setImmediate(() => {
+        console.log(`[INFO] ${message}`, ...args);
+        resolve();
+      });
+    });
   },
-  error: (message: string, ...args: any[]) => {
-    console.error(`[ERROR] ${message}`, ...args);
+  error: async (message: string, ...args: any[]): Promise<void> => {
+    return new Promise((resolve) => {
+      setImmediate(() => {
+        console.error(`[ERROR] ${message}`, ...args);
+        resolve();
+      });
+    });
   },
-  warn: (message: string, ...args: any[]) => {
-    console.warn(`[WARN] ${message}`, ...args);
+  warn: async (message: string, ...args: any[]): Promise<void> => {
+    return new Promise((resolve) => {
+      setImmediate(() => {
+        console.warn(`[WARN] ${message}`, ...args);
+        resolve();
+      });
+    });
   },
-  debug: (message: string, ...args: any[]) => {
-    console.debug(`[DEBUG] ${message}`, ...args);
+  debug: async (message: string, ...args: any[]): Promise<void> => {
+    return new Promise((resolve) => {
+      setImmediate(() => {
+        console.debug(`[DEBUG] ${message}`, ...args);
+        resolve();
+      });
+    });
   },
 };
 

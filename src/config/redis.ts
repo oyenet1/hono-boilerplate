@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+import { stringifyAsync, parseAsync, safeParse } from "../utils/asyncJson";
 
 // Enhanced Redis configuration for high-scale production
 const redisConfig = {
@@ -102,10 +103,11 @@ class RedisManager {
     ttlSeconds: number = 3600
   ): Promise<void> {
     try {
+      const serializedData = await stringifyAsync(data);
       await this.client.setex(
         `session:${sessionId}`,
         ttlSeconds,
-        JSON.stringify(data)
+        serializedData
       );
     } catch (error) {
       console.error("Error setting session:", error);
@@ -116,7 +118,7 @@ class RedisManager {
   public async getSession(sessionId: string): Promise<any | null> {
     try {
       const data = await this.client.get(`session:${sessionId}`);
-      return data ? JSON.parse(data) : null;
+      return data ? await parseAsync(data) : null;
     } catch (error) {
       console.error("Error getting session:", error);
       return null;
@@ -256,11 +258,8 @@ class RedisManager {
     ttlSeconds: number = 300
   ): Promise<void> {
     try {
-      await this.client.setex(
-        `cache:${key}`,
-        ttlSeconds,
-        JSON.stringify(value)
-      );
+      const serializedValue = await stringifyAsync(value);
+      await this.client.setex(`cache:${key}`, ttlSeconds, serializedValue);
     } catch (error) {
       console.error("Error setting cache:", error);
       throw error;
@@ -270,7 +269,7 @@ class RedisManager {
   public async getCache(key: string): Promise<any | null> {
     try {
       const data = await this.client.get(`cache:${key}`);
-      return data ? JSON.parse(data) : null;
+      return data ? await parseAsync(data) : null;
     } catch (error) {
       console.error("Error getting cache:", error);
       return null;

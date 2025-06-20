@@ -61,7 +61,7 @@ export class DrizzleDatabase implements IDatabase {
 
   async deleteUser(id: string): Promise<boolean> {
     const result = await db.delete(users).where(eq(users.id, id));
-    return result.length > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getAllUsers(page: number = 1, limit: number = 10): Promise<User[]> {
@@ -118,7 +118,7 @@ export class DrizzleDatabase implements IDatabase {
     const result = await db
       .delete(posts)
       .where(and(eq(posts.id, id), eq(posts.userId, userId)));
-    return result.length > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getAllPosts(page: number = 1, limit: number = 10): Promise<Post[]> {

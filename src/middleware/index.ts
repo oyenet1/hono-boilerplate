@@ -45,7 +45,10 @@ export const loggerMiddleware = async (c: Context, next: Next) => {
   console.log(`${c.req.method} ${c.req.url} - ${c.res.status} - ${ms}ms`);
 };
 
-export const errorHandler = (err: Error, c: Context) => {
+export const errorHandler = async (
+  err: Error,
+  c: Context
+): Promise<Response> => {
   if (err instanceof HTTPException) {
     return c.json({ error: err.message }, err.status);
   }

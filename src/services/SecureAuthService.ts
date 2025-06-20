@@ -8,6 +8,7 @@ import { TYPES } from "../di/types";
 import { CreateUserDto, LoginDto } from "../dtos";
 import { appConfig } from "../config/app";
 import { redisManager } from "../config/redis";
+import { stringifyAsync, parseAsync, safeParse } from "../utils/asyncJson";
 
 interface SessionData {
   sessionId: string;
@@ -114,7 +115,7 @@ export class SecureAuthService implements IAuthService {
       const sessionDataString = await redisManager.get(sessionKey);
 
       if (sessionDataString) {
-        const sessionData: SessionData = JSON.parse(sessionDataString);
+        const sessionData: SessionData = await parseAsync(sessionDataString);
         const userSessionsKey = `user_sessions:${sessionData.userId}`;
 
         // Remove from user's session list
@@ -134,7 +135,7 @@ export class SecureAuthService implements IAuthService {
       const payload = (await verify(token, appConfig.jwt.secret)) as any;
       const sessionKey = `session:${payload.sessionId}`;
       const sessionData = await redisManager.get(sessionKey);
-      return sessionData ? JSON.parse(sessionData) : null;
+      return sessionData ? await safeParse(sessionData) : null;
     } catch (error) {
       return null;
     }

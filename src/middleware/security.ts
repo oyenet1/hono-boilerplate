@@ -7,6 +7,8 @@ import { TYPES } from "../di/types";
 import { SecureAuthService } from "../services/SecureAuthService";
 import { TokenExtractor } from "../utils/tokenExtractor";
 import { ApiResponse } from "../utils/response";
+import logger from "../utils/logger";
+import { stringifyAsync } from "../utils/asyncJson";
 
 export interface RateLimitConfig {
   windowMs: number;
@@ -253,14 +255,15 @@ export const loggerMiddleware = async (c: Context, next: Next) => {
   };
 
   // Log to console (in production, use proper logging service)
-  console.log(JSON.stringify(logEntry));
+  const logString = await stringifyAsync(logEntry);
+  console.log(logString);
 
   // Log to Redis for analytics (optional)
   if (redisManager.isRedisConnected()) {
     try {
       const logKey = `logs:${new Date().toISOString().split("T")[0]}`;
       const client = redisManager.getClient();
-      await client.lpush(logKey, JSON.stringify(logEntry));
+      await client.lpush(logKey, logString);
       await client.expire(logKey, 7 * 24 * 60 * 60); // Keep logs for 7 days
     } catch (error) {
       console.error("Failed to log to Redis:", error);
@@ -268,12 +271,15 @@ export const loggerMiddleware = async (c: Context, next: Next) => {
   }
 };
 
-export const globalErrorHandler = (err: Error, c: Context) => {
+export const globalErrorHandler = async (
+  err: Error,
+  c: Context
+): Promise<Response> => {
   if (err instanceof HTTPException) {
     return c.json({ error: err.message }, err.status);
   }
 
-  console.error("Unhandled error:", err);
+  await logger.error("Unhandled error:", err);
 
   // Avoid leaking error details in production
   const errorMessage =

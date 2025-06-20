@@ -91,9 +91,6 @@ export class AuthController {
   async profile(c: Context) {
     try {
       const userId = c.get("userId");
-      if (!userId) {
-        return ApiResponse.error(c, "User not authenticated", 401);
-      }
 
       // Fetch user profile from the authService (or userService if preferred)
       const user = await this.authService.getProfile(userId);
