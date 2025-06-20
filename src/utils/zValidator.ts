@@ -12,21 +12,15 @@ export const zValidator = <
 ) =>
   zv(target, schema, (result, c) => {
     if (!result.success) {
-      // Convert the validation errors to an array of error messages
-      const errorMessages = result.error.errors.map((err) => {
-        const field = err.path.join(".");
-        return field ? `${field}: ${err.message}` : err.message;
+      // Format errors as an object with field names as keys
+      const errorObj: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path.join(".") || "general";
+        errorObj[field] = err.message;
       });
 
-      // Format errors as an object with field names as keys for detailed error info
-      const formattedErrors = result.error.errors.reduce((acc, err) => {
-        const key = err.path.join(".") || "general";
-        acc[key] = err.message;
-        return acc;
-      }, {} as Record<string, string>);
-
       // Return a structured error response using ApiResponse
-      return ApiResponse.badRequest(c, "Validation failed", errorMessages);
+      return ApiResponse.badRequest(c, "Validation failed", errorObj);
     }
   });
 

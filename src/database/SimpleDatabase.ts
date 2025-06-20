@@ -71,7 +71,17 @@ export class SimpleDatabase implements IDatabase {
   }
 
   // Test helper methods
-  clear(): void {
+  async clear(): Promise<void> {
     simpleDb.clear();
+  }
+
+  async seedTestData(): Promise<void> {
+    this.clear();
+    // Add minimal test data
+    await simpleDb.createUser({
+      name: "Test User",
+      email: "test@example.com",
+      password: "hashedpassword",
+    });
   }
 }

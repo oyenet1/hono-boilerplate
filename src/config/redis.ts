@@ -1,18 +1,35 @@
 import Redis from "ioredis";
 
-// Redis configuration for sessions and caching
+// Enhanced Redis configuration for high-scale production
 const redisConfig = {
   host: process.env.REDIS_HOST || "localhost",
   port: parseInt(process.env.REDIS_PORT || "6379"),
   password: process.env.REDIS_PASSWORD || undefined,
   db: parseInt(process.env.REDIS_DB || "0"),
   keyPrefix: process.env.REDIS_KEY_PREFIX || "hono:",
-  retryDelayOnFailover: 100,
-  maxRetriesPerRequest: 3,
-  lazyConnect: false, // Changed to false for immediate connection
+
+  // Connection pooling and performance optimizations
+  lazyConnect: true, // Don't connect immediately
+  keepAlive: 30000, // Keep connections alive
+  maxRetriesPerRequest: null, // Don't limit retries per request
+  retryDelayOnFailover: 100, // Fast failover
+  enableAutoPipelining: true, // Auto-batch commands for performance
+
+  // Timeouts optimized for high traffic
+  commandTimeout: 2000, // Reduced from 5000ms
+  connectTimeout: 5000, // Reduced from 10000ms
   disconnectTimeout: 2000,
-  commandTimeout: 5000,
-  connectTimeout: 10000,
+
+  // Connection management
+  family: 4, // IPv4
+  maxListeners: 0, // No limit on event listeners
+
+  // Performance tuning
+  enableReadyCheck: true,
+  maxLoadingTimeout: 5000,
+
+  // Queue management (different for dev vs prod)
+  enableOfflineQueue: process.env.NODE_ENV !== "production",
 };
 
 class RedisManager {

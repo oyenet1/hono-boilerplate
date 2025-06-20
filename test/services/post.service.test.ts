@@ -8,7 +8,7 @@ describe("PostService", () => {
   let container: any;
   let postService: IPostService;
   let userService: IUserService;
-  let userId: number;
+  let userId: string;
 
   beforeEach(async () => {
     container = createTestContainer();
@@ -35,7 +35,7 @@ describe("PostService", () => {
       const post = await postService.createPost(postData, userId);
 
       expect(post).toBeDefined();
-      expect(post.id).toBe(1);
+      expect(post.id).toMatch(/^[a-z0-9]+$/);
       expect(post.title).toBe(postData.title);
       expect(post.content).toBe(postData.content);
       expect(post.userId).toBe(userId);
@@ -59,7 +59,7 @@ describe("PostService", () => {
     });
 
     test("should return undefined for non-existent post", async () => {
-      const post = await postService.findById(999);
+      const post = await postService.findById("nonexistent");
       expect(post).toBeUndefined();
     });
   });
@@ -87,7 +87,11 @@ describe("PostService", () => {
 
     test("should return undefined when updating non-existent post", async () => {
       const updateData = { title: "Updated Post" };
-      const result = await postService.updatePost(999, updateData, userId);
+      const result = await postService.updatePost(
+        "nonexistent",
+        updateData,
+        userId
+      );
       expect(result).toBeUndefined();
     });
   });
@@ -109,7 +113,7 @@ describe("PostService", () => {
     });
 
     test("should return false for non-existent post", async () => {
-      const deleted = await postService.deletePost(999, userId);
+      const deleted = await postService.deletePost("nonexistent", userId);
       expect(deleted).toBe(false);
     });
   });

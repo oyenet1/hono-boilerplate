@@ -146,49 +146,49 @@ export const createRateLimitMiddleware = (rateLimitConfig: RateLimitConfig) => {
   };
 };
 
-// Predefined rate limit configurations - NAT-friendly
+// Predefined rate limit configurations - Optimized for 10K+ users
 export const rateLimits = {
-  // Strict rate limiting for authentication endpoints
+  // Authentication endpoints - increased for scale
   auth: createRateLimitMiddleware({
     windowMs: 5 * 60 * 1000, // 5 minutes
-    max: 10, // Increased from 5 to 10 for shared networks
+    max: 50, // Increased from 10 to 50 for higher traffic
     message: "Too many authentication attempts, please try again later",
   }),
 
-  // OTP sending - once every 5 minutes
+  // OTP sending - slightly more flexible
   otpSend: createRateLimitMiddleware({
-    windowMs: 5 * 60 * 1000, // 5 minutes
-    max: 1, // Only 1 OTP per 5 minutes
+    windowMs: 3 * 60 * 1000, // 3 minutes (reduced from 5)
+    max: 2, // Increased from 1 to 2 for better UX
     message:
-      "OTP can only be sent once every 5 minutes. Please wait before requesting another OTP",
+      "OTP can only be sent twice every 3 minutes. Please wait before requesting another OTP",
   }),
 
-  // OTP verification - 3 attempts in 5 minutes
+  // OTP verification - more attempts allowed
   otpVerify: createRateLimitMiddleware({
     windowMs: 5 * 60 * 1000, // 5 minutes
-    max: 3, // Maximum 3 verification attempts in 5 minutes
+    max: 10, // Increased from 3 to 10 for better UX
     message:
       "Too many OTP verification attempts. Please wait 5 minutes before trying again",
   }),
 
-  // Moderate rate limiting for API endpoints
+  // API endpoints - significantly increased for scale
   api: createRateLimitMiddleware({
     windowMs: 60 * 1000, // 1 minute
-    max: 120, // Increased from 60 to 120 for shared networks
+    max: 1000, // Increased from 120 to 1000 for high traffic
     message: "Rate limit exceeded, please slow down",
   }),
 
-  // Lenient rate limiting for public endpoints
+  // Public endpoints - increased for scale
   public: createRateLimitMiddleware({
     windowMs: 60 * 1000, // 1 minute
-    max: 200, // Increased from 100 to 200 for shared networks
+    max: 2000, // Increased from 200 to 2000 for high traffic
     message: "Rate limit exceeded",
   }),
 
-  // Very strict for sensitive operations
+  // Sensitive operations - slightly more flexible
   sensitive: createRateLimitMiddleware({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 5, // Slightly increased from 3 to 5
+    windowMs: 30 * 60 * 1000, // 30 minutes (reduced from 60)
+    max: 10, // Increased from 5 to 10
     message: "Too many sensitive operations, please try again later",
   }),
 };

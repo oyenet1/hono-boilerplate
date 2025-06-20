@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { HTTPException } from "hono/http-exception";
-import { ApiResponse } from "./response";
 
 export class ValidationHelper {
   static validateBody<T>(schema: z.ZodSchema<T>, data: unknown): T {
@@ -8,14 +7,16 @@ export class ValidationHelper {
       return schema.parse(data);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errorMessages = error.errors.map(
-          (err) => `${err.path.join(".")}: ${err.message}`
-        );
+        const errorObj: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          const field = err.path.join(".") || "general";
+          errorObj[field] = err.message;
+        });
         throw new HTTPException(422, {
           message: JSON.stringify({
             success: false,
             message: "Please check your request data and try again",
-            errors: errorMessages,
+            errors: errorObj,
           }),
         });
       }
@@ -23,7 +24,7 @@ export class ValidationHelper {
         message: JSON.stringify({
           success: false,
           message: "Invalid request format. Please check your data",
-          errors: ["The request data format is not valid"],
+          errors: { general: "The request data format is not valid" },
         }),
       });
     }
@@ -34,14 +35,16 @@ export class ValidationHelper {
       return schema.parse(data);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errorMessages = error.errors.map(
-          (err) => `${err.path.join(".")}: ${err.message}`
-        );
+        const errorObj: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          const field = err.path.join(".") || "general";
+          errorObj[field] = err.message;
+        });
         throw new HTTPException(422, {
           message: JSON.stringify({
             success: false,
             message: "Please check your query parameters and try again",
-            errors: errorMessages,
+            errors: errorObj,
           }),
         });
       }
@@ -49,7 +52,7 @@ export class ValidationHelper {
         message: JSON.stringify({
           success: false,
           message: "Invalid query parameters. Please check your request",
-          errors: ["The query parameters format is not valid"],
+          errors: { general: "The query parameters format is not valid" },
         }),
       });
     }
@@ -60,14 +63,16 @@ export class ValidationHelper {
       return schema.parse(data);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errorMessages = error.errors.map(
-          (err) => `${err.path.join(".")}: ${err.message}`
-        );
+        const errorObj: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          const field = err.path.join(".") || "general";
+          errorObj[field] = err.message;
+        });
         throw new HTTPException(422, {
           message: JSON.stringify({
             success: false,
             message: "Please check your URL parameters and try again",
-            errors: errorMessages,
+            errors: errorObj,
           }),
         });
       }
@@ -75,7 +80,7 @@ export class ValidationHelper {
         message: JSON.stringify({
           success: false,
           message: "Invalid URL parameters. Please check your request",
-          errors: ["The URL parameters format is not valid"],
+          errors: { general: "The URL parameters format is not valid" },
         }),
       });
     }
@@ -88,11 +93,12 @@ export class ValidationHelper {
   ): {
     success: false;
     message: string;
-    errors: string[];
+    errors: Record<string, string>;
   } {
-    const errorMessages = error.errors.map((err) => {
-      const field = err.path.join(".");
-      return field ? `${field}: ${err.message}` : err.message;
+    const errorObj: Record<string, string> = {};
+    error.errors.forEach((err) => {
+      const field = err.path.join(".") || "general";
+      errorObj[field] = err.message;
     });
 
     const contextMessages: Record<string, string> = {
@@ -105,7 +111,7 @@ export class ValidationHelper {
     return {
       success: false,
       message: contextMessages[context] || contextMessages["Validation"],
-      errors: errorMessages,
+      errors: errorObj,
     };
   }
 }

@@ -4,7 +4,7 @@ export interface ApiResponseData<T = any> {
   success: boolean;
   message: string;
   data?: T;
-  errors?: string[];
+  errors?: Record<string, string>; // Changed from string[] to object
   meta?: {
     page?: number;
     limit?: number;
@@ -38,15 +38,34 @@ export class ApiResponse {
     c: Context,
     message: string = "An error occurred",
     status: number = 500,
-    errors?: string[]
+    errors?: string[] | Record<string, string>
   ) {
     const response: ApiResponseData = {
       success: false,
       message,
     };
 
-    if (errors && errors.length > 0) {
-      response.errors = errors;
+    if (errors) {
+      if (Array.isArray(errors)) {
+        // Convert array to object format
+        const errorObj: Record<string, string> = {};
+        errors.forEach((error, index) => {
+          // Extract field name if format is "field: message"
+          const colonIndex = error.indexOf(":");
+          if (colonIndex > 0) {
+            const field = error.substring(0, colonIndex).trim();
+            const msg = error.substring(colonIndex + 1).trim();
+            errorObj[field] = msg;
+          } else {
+            // Use generic key if no field specified
+            errorObj[`error_${index + 1}`] = error;
+          }
+        });
+        response.errors = errorObj;
+      } else {
+        // Already an object
+        response.errors = errors;
+      }
     }
 
     return c.json(response, status as any);
@@ -91,7 +110,7 @@ export class ApiResponse {
   static validationError(
     c: Context,
     message: string = "Validation failed. Please check your input",
-    errors?: string[]
+    errors?: string[] | Record<string, string>
   ) {
     return this.error(c, message, 422, errors);
   }
@@ -99,7 +118,7 @@ export class ApiResponse {
   static badRequest(
     c: Context,
     message: string = "Invalid request. Please check your data and try again",
-    errors?: string[]
+    errors?: string[] | Record<string, string>
   ) {
     return this.error(c, message, 400, errors);
   }

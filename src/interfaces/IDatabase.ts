@@ -48,4 +48,8 @@ export interface IDatabase {
     page?: number,
     limit?: number
   ): Promise<Post[]>;
+
+  // Test helper methods
+  clear(): Promise<void>;
+  seedTestData(): Promise<void>;
 }

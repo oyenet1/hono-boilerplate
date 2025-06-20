@@ -9,7 +9,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
 
   try {
     const decoded = (await verify(token, appConfig.jwt.secret)) as {
-      userId: number;
+      userId: string;
     };
     c.set("userId", decoded.userId);
     await next();

@@ -34,15 +34,16 @@ export const errorHandler = async (c: Context, next: Next) => {
 
     // Handle Zod validation errors
     if (err instanceof ZodError) {
-      const formattedErrors = err.errors.map((error) => {
-        const field = error.path.join(".");
-        return field ? `${field}: ${error.message}` : error.message;
+      const errorObj: Record<string, string> = {};
+      err.errors.forEach((error) => {
+        const field = error.path.join(".") || "general";
+        errorObj[field] = error.message;
       });
 
       return ApiResponse.validationError(
         c,
         "Validation failed. Please check your input",
-        formattedErrors
+        errorObj
       );
     }
 
@@ -86,7 +87,7 @@ export const asyncHandler = (fn: Function) => {
 export class ValidationError extends HTTPException {
   constructor(
     message: string = "Validation failed. Please check your input",
-    errors: string[] = []
+    errors: Record<string, string> = {}
   ) {
     const errorResponse = {
       success: false,
@@ -138,9 +139,9 @@ export class ConflictError extends HTTPException {
 export class BadRequestError extends HTTPException {
   constructor(
     message: string = "Invalid request. Please check your data and try again",
-    errors: string[] = []
+    errors: Record<string, string> = {}
   ) {
-    if (errors.length > 0) {
+    if (Object.keys(errors).length > 0) {
       const errorResponse = {
         success: false,
         message,

@@ -33,7 +33,7 @@ describe("AuthService", () => {
       expect(result.sessionId).toBeDefined();
       expect(result.user.name).toBe(userData.name);
       expect(result.user.email).toBe(userData.email);
-      expect(result.user.id).toBe(1);
+      expect(result.user.id).toMatch(/^[a-z0-9]+$/);
       expect(typeof result.sessionId).toBe("string");
     });
 

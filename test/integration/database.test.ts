@@ -23,7 +23,7 @@ describe("Database Integration", () => {
       };
 
       const user = await database.createUser(userData);
-      expect(user.id).toBe(1);
+      expect(user.id).toMatch(/^[a-z0-9]+$/);
 
       // Create posts for the user
       const postData1 = {
@@ -41,8 +41,8 @@ describe("Database Integration", () => {
       const post1 = await database.createPost(postData1);
       const post2 = await database.createPost(postData2);
 
-      expect(post1.id).toBe(1);
-      expect(post2.id).toBe(2);
+      expect(post1.id).toMatch(/^[a-z0-9]+$/);
+      expect(post2.id).toMatch(/^[a-z0-9]+$/);
       expect(post1.userId).toBe(user.id);
       expect(post2.userId).toBe(user.id);
 
@@ -157,13 +157,12 @@ describe("Database Integration", () => {
       expect(database.getAllPosts()).resolves.toHaveLength(0);
     });
 
-    test("should seed test data correctly", () => {
-      database.seedTestData();
+    test("should seed test data correctly", async () => {
+      await database.seedTestData();
 
-      expect(database.findUserById(1)).resolves.toBeDefined();
-      expect(
-        database.findUserByEmail("test@example.com")
-      ).resolves.toBeDefined();
+      const user = await database.findUserByEmail("test@example.com");
+      expect(user).toBeDefined();
+      expect(user?.name).toBe("Test User");
     });
   });
 });
