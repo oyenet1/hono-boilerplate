@@ -20,7 +20,7 @@ const UserIdSchema = z.object({
 });
 
 // Apply API rate limiting to all user routes
-userRoute.use("*", rateLimits.api);
+// userRoute.use("*", rateLimits.api);
 
 // Public user routes (with rate limiting and validation)
 userRoute.get("/", validateQuery(PaginationDto), (c) =>

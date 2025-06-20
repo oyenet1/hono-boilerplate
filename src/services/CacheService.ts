@@ -26,7 +26,7 @@ export class CacheService {
     try {
       const ttl = options?.ttl || this.defaultTTL;
       const serialized = await stringifyAsync(value);
-      await redisManager.setWithExpiration(key, serialized, ttl);
+      await redisManager.setWithExpiry(key, serialized, ttl);
     } catch (error) {
       console.error(`Error setting cache for key ${key}:`, error);
     }
@@ -34,7 +34,7 @@ export class CacheService {
 
   async delete(key: string): Promise<void> {
     try {
-      await redisManager.delete(key);
+      await redisManager.del(key);
     } catch (error) {
       console.error(`Error deleting cache for key ${key}:`, error);
     }
@@ -46,7 +46,12 @@ export class CacheService {
       const client = redisManager.getClient();
       const keys = await client.keys(pattern);
       if (keys.length > 0) {
-        await client.del(...keys);
+        // Remove the Redis prefix from keys before deleting
+        const keysWithoutPrefix = keys.map(key => 
+          key.startsWith('hono:') ? key.substring(5) : key
+        );
+        await client.del(...keysWithoutPrefix);
+        console.log(`🗑️ Deleted ${keys.length} keys matching pattern: ${pattern}`);
       }
     } catch (error) {
       console.error(`Error deleting cache pattern ${pattern}:`, error);
@@ -82,23 +87,36 @@ export class CacheService {
 
   // Invalidate related cache keys
   async invalidateUserCache(userId?: string): Promise<void> {
-    const patterns = ["users:*", userId ? `user:${userId}:*` : null].filter(
-      Boolean
-    );
+    // Clear ALL user-related cache patterns
+    const patterns = [
+      "users:*",       // All user collections
+      "user:*",        // All individual users (including by ID and email)
+    ];
 
     for (const pattern of patterns) {
-      await this.deletePattern(pattern!);
+      await this.deletePattern(pattern);
     }
+    
+    console.log(`🗑️ Invalidated ALL user cache patterns for user: ${userId || 'all'}`);
   }
 
   async invalidatePostCache(userId?: string): Promise<void> {
+    // Clear ALL post-related cache patterns  
     const patterns = [
-      "posts:*",
-      userId ? `posts:user:${userId}:*` : null,
-    ].filter(Boolean);
+      "posts:*",       // All post collections
+      "post:*",        // All individual posts
+    ];
 
     for (const pattern of patterns) {
-      await this.deletePattern(pattern!);
+      await this.deletePattern(pattern);
     }
+    
+    console.log(`🗑️ Invalidated ALL post cache patterns for user: ${userId || 'all'}`);
+  }
+
+  // Clear all application cache
+  async invalidateAllCache(): Promise<void> {
+    await this.clear();
+    console.log(`🗑️ Cleared ALL application cache`);
   }
 }
