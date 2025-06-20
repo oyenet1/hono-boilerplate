@@ -3,12 +3,6 @@ import { Context } from "hono";
 import type { IPostService } from "../interfaces/IPostService";
 import { TYPES } from "../di/types";
 import { ApiResponse } from "../utils/response";
-import {
-  NotFoundError,
-  BadRequestError,
-  UnauthorizedError,
-  handleDatabaseError,
-} from "../utils/errorHandlers";
 
 @injectable()
 export class PostController {
@@ -114,11 +108,7 @@ export class PostController {
         Number(page),
         Number(limit)
       );
-      return ApiResponse.success(
-        c,
-        posts,
-        "User posts retrieved successfully"
-      );
+      return ApiResponse.success(c, posts, "User posts retrieved successfully");
     } catch (error) {
       const message =
         error instanceof Error

@@ -4,11 +4,6 @@ import type { IAuthService } from "../interfaces/IAuthService";
 import { TYPES } from "../di/types";
 import { ApiResponse } from "../utils/response";
 import { TokenExtractor } from "../utils/tokenExtractor";
-import {
-  BadRequestError,
-  UnauthorizedError,
-  handleDatabaseError,
-} from "../utils/errorHandlers";
 
 @injectable()
 export class AuthController {

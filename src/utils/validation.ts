@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { ApiResponse } from "./response";
 

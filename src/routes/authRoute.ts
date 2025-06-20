@@ -17,7 +17,7 @@ authRoute.use("*", rateLimits.auth);
 authRoute.post("/register", validateJson(CreateUserDto), (c) =>
   authController.register(c)
 );
-authRoute.post("/login", zValidator("json", LoginDto), (c) =>
+authRoute.post("/login", validateJson(LoginDto), (c) =>
   authController.login(c)
 );
 authRoute.post("/logout", (c) => authController.logout(c));

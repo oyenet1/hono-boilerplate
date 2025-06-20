@@ -31,7 +31,7 @@ export const secureAuthMiddleware = async (c: Context, next: Next) => {
       return ApiResponse.error(
         c,
         "Your session has expired. Please login again",
-        401
+        419
       );
     }
 
@@ -150,7 +150,7 @@ export const createRateLimitMiddleware = (rateLimitConfig: RateLimitConfig) => {
 export const rateLimits = {
   // Strict rate limiting for authentication endpoints
   auth: createRateLimitMiddleware({
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 5 * 60 * 1000, // 5 minutes
     max: 10, // Increased from 5 to 10 for shared networks
     message: "Too many authentication attempts, please try again later",
   }),
