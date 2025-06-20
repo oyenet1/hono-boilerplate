@@ -259,8 +259,9 @@ export const loggerMiddleware = async (c: Context, next: Next) => {
   if (redisManager.isRedisConnected()) {
     try {
       const logKey = `logs:${new Date().toISOString().split("T")[0]}`;
-      await redisManager.getClient().lpush(logKey, JSON.stringify(logEntry));
-      await redisManager.getClient().expire(logKey, 7 * 24 * 60 * 60); // Keep logs for 7 days
+      const client = redisManager.getClient();
+      await client.lpush(logKey, JSON.stringify(logEntry));
+      await client.expire(logKey, 7 * 24 * 60 * 60); // Keep logs for 7 days
     } catch (error) {
       console.error("Failed to log to Redis:", error);
     }

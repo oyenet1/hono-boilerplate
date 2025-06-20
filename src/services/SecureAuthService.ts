@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { inject, injectable } from "inversify";
 import { hash, compare } from "bcryptjs";
 import { sign, verify } from "hono/jwt";
-import type { IAuthService } from "../interfaces/IAuthService";
+import type { IAuthService, UserSession } from "../interfaces/IAuthService";
 import type { IUserService } from "../interfaces/IUserService";
 import { TYPES } from "../di/types";
 import { CreateUserDto, LoginDto } from "../dtos";
@@ -10,6 +10,7 @@ import { appConfig } from "../config/app";
 import { redisManager } from "../config/redis";
 
 interface SessionData {
+  sessionId: string;
   userId: string;
   email: string;
   loginTime: number;
@@ -108,7 +109,24 @@ export class SecureAuthService implements IAuthService {
   }
 
   async logout(sessionId: string): Promise<void> {
-    await redisManager.del(`session:${sessionId}`);
+    try {
+      const sessionKey = `session:${sessionId}`;
+      const sessionDataString = await redisManager.get(sessionKey);
+
+      if (sessionDataString) {
+        const sessionData: SessionData = JSON.parse(sessionDataString);
+        const userSessionsKey = `user_sessions:${sessionData.userId}`;
+
+        // Remove from user's session list
+        await redisManager.srem(userSessionsKey, sessionId);
+      }
+
+      // Remove session data
+      await redisManager.del(sessionKey);
+    } catch (error) {
+      console.error("Error during logout:", error);
+      throw error;
+    }
   }
 
   async verifySession(token: string) {
@@ -166,6 +184,7 @@ export class SecureAuthService implements IAuthService {
     );
 
     const newSessionData: SessionData = {
+      sessionId,
       userId: user.id,
       email: user.email,
       loginTime: Date.now(),
@@ -179,6 +198,11 @@ export class SecureAuthService implements IAuthService {
       JSON.stringify(newSessionData),
       appConfig.security.sessionTTL
     );
+
+    // Also store session in user's session list for easy retrieval
+    const userSessionsKey = `user_sessions:${user.id}`;
+    await redisManager.sadd(userSessionsKey, sessionId);
+    await redisManager.expire(userSessionsKey, appConfig.security.sessionTTL);
 
     return { token, sessionId };
   }
@@ -305,5 +329,118 @@ export class SecureAuthService implements IAuthService {
   async getProfile(userId: string): Promise<any | null> {
     // Use userService to fetch user profile
     return this.userService.findById(userId);
+  }
+
+  // New session management methods
+  async getAllUserSessions(
+    userId: string,
+    currentSessionId?: string
+  ): Promise<UserSession[]> {
+    try {
+      const userSessionsKey = `user_sessions:${userId}`;
+      const sessionIds = await redisManager.smembers(userSessionsKey);
+
+      const sessions: UserSession[] = [];
+
+      for (const sessionId of sessionIds) {
+        const sessionKey = `session:${sessionId}`;
+        const sessionDataString = await redisManager.get(sessionKey);
+
+        if (sessionDataString) {
+          const sessionData: SessionData = JSON.parse(sessionDataString);
+          sessions.push({
+            sessionId: sessionData.sessionId,
+            userId: sessionData.userId,
+            email: sessionData.email,
+            loginTime: sessionData.loginTime,
+            lastActivity: sessionData.lastActivity,
+            ipAddress: sessionData.ipAddress,
+            userAgent: sessionData.userAgent,
+            isCurrent: currentSessionId === sessionId,
+          });
+        } else {
+          // Clean up stale session reference
+          await redisManager.srem(userSessionsKey, sessionId);
+        }
+      }
+
+      // Sort by login time (newest first)
+      return sessions.sort((a, b) => b.loginTime - a.loginTime);
+    } catch (error) {
+      console.error("Error getting user sessions:", error);
+      return [];
+    }
+  }
+
+  async revokeSession(sessionId: string, userId: string): Promise<boolean> {
+    try {
+      const sessionKey = `session:${sessionId}`;
+      const userSessionsKey = `user_sessions:${userId}`;
+
+      // Remove session data
+      await redisManager.del(sessionKey);
+
+      // Remove from user's session list
+      await redisManager.srem(userSessionsKey, sessionId);
+
+      return true;
+    } catch (error) {
+      console.error("Error revoking session:", error);
+      return false;
+    }
+  }
+
+  async revokeAllOtherSessions(
+    currentSessionId: string,
+    userId: string
+  ): Promise<number> {
+    try {
+      const userSessionsKey = `user_sessions:${userId}`;
+      const sessionIds = await redisManager.smembers(userSessionsKey);
+
+      let revokedCount = 0;
+
+      for (const sessionId of sessionIds) {
+        if (sessionId !== currentSessionId) {
+          const sessionKey = `session:${sessionId}`;
+          await redisManager.del(sessionKey);
+          await redisManager.srem(userSessionsKey, sessionId);
+          revokedCount++;
+        }
+      }
+
+      return revokedCount;
+    } catch (error) {
+      console.error("Error revoking other sessions:", error);
+      return 0;
+    }
+  }
+
+  async getCurrentSession(token: string): Promise<UserSession | null> {
+    try {
+      const payload = (await verify(token, appConfig.jwt.secret)) as any;
+      const sessionKey = `session:${payload.sessionId}`;
+      const sessionDataString = await redisManager.get(sessionKey);
+
+      if (!sessionDataString) {
+        return null;
+      }
+
+      const sessionData: SessionData = JSON.parse(sessionDataString);
+
+      return {
+        sessionId: sessionData.sessionId,
+        userId: sessionData.userId,
+        email: sessionData.email,
+        loginTime: sessionData.loginTime,
+        lastActivity: sessionData.lastActivity,
+        ipAddress: sessionData.ipAddress,
+        userAgent: sessionData.userAgent,
+        isCurrent: true,
+      };
+    } catch (error) {
+      console.error("Error getting current session:", error);
+      return null;
+    }
   }
 }

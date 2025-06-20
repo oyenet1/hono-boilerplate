@@ -41,9 +41,20 @@ export const PaginationDto = z.object({
     .transform((val: string | undefined) => (val ? parseInt(val) : 10)),
 });
 
+// Session management DTOs
+export const RevokeSessionDto = z.object({
+  sessionId: z.string().min(1, "Session ID is required"),
+});
+
+export const RefreshSessionDto = z.object({
+  sessionId: z.string().min(1, "Session ID is required"),
+});
+
 export type CreateUserDto = z.infer<typeof CreateUserDto>;
 export type LoginDto = z.infer<typeof LoginDto>;
 export type UpdateUserDto = z.infer<typeof UpdateUserDto>;
 export type CreatePostDto = z.infer<typeof CreatePostDto>;
 export type UpdatePostDto = z.infer<typeof UpdatePostDto>;
 export type PaginationDto = z.infer<typeof PaginationDto>;
+export type RevokeSessionDto = z.infer<typeof RevokeSessionDto>;
+export type RefreshSessionDto = z.infer<typeof RefreshSessionDto>;

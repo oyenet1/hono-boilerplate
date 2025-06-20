@@ -108,4 +108,114 @@ export class AuthController {
       return ApiResponse.error(c, message, 400);
     }
   }
+
+  async getSessions(c: Context) {
+    try {
+      const userId = c.get("userId");
+      const sessionData = c.get("sessionData");
+
+      if (!userId) {
+        return ApiResponse.error(c, "User not authenticated", 401);
+      }
+
+      const currentSessionId = sessionData?.sessionId;
+      const sessions = await this.authService.getAllUserSessions(
+        userId,
+        currentSessionId
+      );
+
+      return ApiResponse.success(
+        c,
+        { sessions },
+        "Sessions retrieved successfully"
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to retrieve sessions";
+      return ApiResponse.error(c, message, 500);
+    }
+  }
+
+  async getCurrentSession(c: Context) {
+    try {
+      const token = TokenExtractor.getTokenSafe(c);
+
+      if (!token) {
+        return ApiResponse.error(c, "No active session found", 401);
+      }
+
+      const currentSession = await this.authService.getCurrentSession(token);
+
+      if (!currentSession) {
+        return ApiResponse.error(c, "Session not found", 404);
+      }
+
+      return ApiResponse.success(
+        c,
+        { session: currentSession },
+        "Current session retrieved successfully"
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to retrieve current session";
+      return ApiResponse.error(c, message, 500);
+    }
+  }
+
+  async revokeSession(c: Context) {
+    try {
+      const userId = c.get("userId");
+      const { sessionId } = await c.req.json();
+
+      if (!userId) {
+        return ApiResponse.error(c, "User not authenticated", 401);
+      }
+
+      if (!sessionId) {
+        return ApiResponse.error(c, "Session ID is required", 400);
+      }
+
+      const success = await this.authService.revokeSession(sessionId, userId);
+
+      if (!success) {
+        return ApiResponse.error(c, "Failed to revoke session", 500);
+      }
+
+      return ApiResponse.success(c, null, "Session revoked successfully");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to revoke session";
+      return ApiResponse.error(c, message, 500);
+    }
+  }
+
+  async revokeAllOtherSessions(c: Context) {
+    try {
+      const userId = c.get("userId");
+      const sessionData = c.get("sessionData");
+
+      if (!userId || !sessionData?.sessionId) {
+        return ApiResponse.error(c, "User not authenticated", 401);
+      }
+
+      const revokedCount = await this.authService.revokeAllOtherSessions(
+        sessionData.sessionId,
+        userId
+      );
+
+      return ApiResponse.success(
+        c,
+        { revokedCount },
+        `Successfully revoked ${revokedCount} other session(s)`
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to revoke other sessions";
+      return ApiResponse.error(c, message, 500);
+    }
+  }
 }

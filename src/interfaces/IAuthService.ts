@@ -1,5 +1,16 @@
 import { CreateUserDto, LoginDto } from "../dtos";
 
+export interface UserSession {
+  sessionId: string;
+  userId: string;
+  email: string;
+  loginTime: number;
+  lastActivity: number;
+  ipAddress?: string;
+  userAgent?: string;
+  isCurrent?: boolean;
+}
+
 export interface IAuthService {
   register(
     userData: CreateUserDto,
@@ -39,4 +50,19 @@ export interface IAuthService {
   invalidateAllUserSessions(userId: string): Promise<void>;
 
   getProfile(userId: string): Promise<any | null>;
+
+  // New session management methods
+  getAllUserSessions(
+    userId: string,
+    currentSessionId?: string
+  ): Promise<UserSession[]>;
+
+  revokeSession(sessionId: string, userId: string): Promise<boolean>;
+
+  revokeAllOtherSessions(
+    currentSessionId: string,
+    userId: string
+  ): Promise<number>;
+
+  getCurrentSession(token: string): Promise<UserSession | null>;
 }

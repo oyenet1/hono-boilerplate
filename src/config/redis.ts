@@ -115,6 +115,44 @@ class RedisManager {
     }
   }
 
+  // Set operations for session management
+  public async sadd(key: string, ...members: string[]): Promise<number> {
+    try {
+      return await this.client.sadd(key, ...members);
+    } catch (error) {
+      console.error(`Error adding to set ${key}:`, error);
+      throw error;
+    }
+  }
+
+  public async smembers(key: string): Promise<string[]> {
+    try {
+      return await this.client.smembers(key);
+    } catch (error) {
+      console.error(`Error getting set members ${key}:`, error);
+      return [];
+    }
+  }
+
+  public async srem(key: string, ...members: string[]): Promise<number> {
+    try {
+      return await this.client.srem(key, ...members);
+    } catch (error) {
+      console.error(`Error removing from set ${key}:`, error);
+      throw error;
+    }
+  }
+
+  public async expire(key: string, seconds: number): Promise<boolean> {
+    try {
+      const result = await this.client.expire(key, seconds);
+      return result === 1;
+    } catch (error) {
+      console.error(`Error setting expiry for key ${key}:`, error);
+      throw error;
+    }
+  }
+
   // Generic methods
   public async get(key: string): Promise<string | null> {
     try {
