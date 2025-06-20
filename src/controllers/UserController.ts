@@ -3,11 +3,6 @@ import { Context } from "hono";
 import type { IUserService } from "../interfaces/IUserService";
 import { TYPES } from "../di/types";
 import { ApiResponse } from "../utils/response";
-import {
-  NotFoundError,
-  BadRequestError,
-  handleDatabaseError,
-} from "../utils/errorHandlers";
 
 @injectable()
 export class UserController {
