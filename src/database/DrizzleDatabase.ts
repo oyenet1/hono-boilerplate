@@ -153,9 +153,10 @@ export class DrizzleDatabase implements IDatabase {
   }
 
   async seedTestData(): Promise<void> {
-    // Use the new drizzle-seed approach for test data
-    const { seedTestData } = await import("./seed");
-    await seedTestData();
+    // Use the new TestSeeder
+    const { TestSeeder } = await import("./seeders");
+    const testSeeder = new TestSeeder();
+    await testSeeder.run();
   }
 }
 

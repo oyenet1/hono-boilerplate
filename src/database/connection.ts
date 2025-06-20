@@ -1,14 +1,16 @@
-import { drizzle } from "drizzle-orm/postgres-js";
+import { drizzle } from "drizzle-orm/node-postgres";
 import postgres from "postgres";
 import { appConfig } from "../config/app";
 import * as schema from "./schema";
 
-// Create the connection
-const connectionString = appConfig.database.url;
-const sql = postgres(connectionString, { max: 1 });
+import { Pool } from "pg";
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
-// Create the database instance
-export const db = drizzle(sql, { schema });
+export const db = drizzle({ client: pool });
+
+const sql = await db.execute("select 1");
 
 // Export the connection for potential direct use
 export { sql };

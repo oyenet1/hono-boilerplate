@@ -20,7 +20,7 @@ export const zValidator = <
       });
 
       // Return a structured error response using ApiResponse
-      return ApiResponse.badRequest(c, "Validation failed", errorObj);
+      return ApiResponse.validationError(c, "Validation failed", errorObj);
     }
   });
 

@@ -1,38 +1,44 @@
-import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { appConfig } from "./app";
+import { drizzle } from "drizzle-orm/node-postgres";
+// import { drizzle } from "drizzle-orm/postgres-js";
 
 // Enhanced configuration with connection pooling for scaling
-const client = postgres(
-  process.env.DATABASE_URL || "postgresql://localhost:5432/hono_db",
-  {
-    // Connection pooling for high concurrency
-    max: parseInt(process.env.DB_POOL_MAX || "20"), // Maximum connections in pool
-    idle_timeout: parseInt(process.env.DB_IDLE_TIMEOUT || "20"), // Close idle connections after 20s
-    connect_timeout: parseInt(process.env.DB_CONNECT_TIMEOUT || "10"), // Connection timeout in seconds
-    prepare: false, // Disable prepared statements for better pooling
 
-    // Performance optimizations
-    transform: {
-      undefined: null, // Transform undefined to null for PostgreSQL
-    },
+const client = postgres(appConfig.database.url, {
+  // Connection pooling for high concurrency
+  max: parseInt(process.env.DB_POOL_MAX || "20"), // Maximum connections in pool
+  idle_timeout: parseInt(process.env.DB_IDLE_TIMEOUT || "20"), // Close idle connections after 20s
+  connect_timeout: parseInt(process.env.DB_CONNECT_TIMEOUT || "10"), // Connection timeout in seconds
+  prepare: false, // Disable prepared statements for better pooling
 
-    // SSL configuration for production
-    ssl:
-      process.env.NODE_ENV === "production"
-        ? { rejectUnauthorized: false }
-        : false,
+  // Performance optimizations
+  transform: {
+    undefined: null, // Transform undefined to null for PostgreSQL
+  },
 
-    // Connection debugging (only in development)
-    debug: process.env.NODE_ENV === "development" ? console.log : false,
-  }
-);
+  // SSL configuration for production
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
 
-export const db = drizzle(client);
+  // Connection debugging (only in development)
+  debug: process.env.NODE_ENV === "development" ? console.log : false,
+});
+
+import { Pool } from "pg";
+
+const pool = new Pool({
+  connectionString: appConfig.database.url,
+});
+
+export const db = drizzle({ client: pool });
 
 // Health check function for database
 export async function checkDatabaseHealth(): Promise<boolean> {
   try {
-    await client`SELECT 1`;
+    await pool.query(`SELECT 1`);
     return true;
   } catch (error) {
     console.error("Database health check failed:", error);
