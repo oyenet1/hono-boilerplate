@@ -76,12 +76,8 @@ export class SimpleDatabase implements IDatabase {
   }
 
   async seedTestData(): Promise<void> {
-    this.clear();
-    // Add minimal test data
-    await simpleDb.createUser({
-      name: "Test User",
-      email: "test@example.com",
-      password: "hashedpassword",
-    });
+    // Use the new drizzle-seed approach for test data
+    const { seedTestData } = await import("./seed");
+    await seedTestData();
   }
 }

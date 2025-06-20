@@ -153,13 +153,9 @@ export class DrizzleDatabase implements IDatabase {
   }
 
   async seedTestData(): Promise<void> {
-    await this.clear();
-    // Add minimal test data
-    await db.insert(users).values({
-      name: "Test User",
-      email: "test@example.com",
-      password: "hashedpassword",
-    });
+    // Use the new drizzle-seed approach for test data
+    const { seedTestData } = await import("./seed");
+    await seedTestData();
   }
 }
 

@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { existEmail } from "../validators/emailValidation";
+import { existEmail, uniqueEmail } from "../validators/emailValidation";
 
 // User DTOs
 export const CreateUserDto = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email format"),
+  email: uniqueEmail,
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
