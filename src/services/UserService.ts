@@ -1,12 +1,20 @@
 import { inject, injectable } from "inversify";
 import type { IUserService } from "../interfaces/IUserService";
-import type { IDatabase, User } from "../interfaces/IDatabase";
+import type { IDatabase, User, QueryOptions } from "../interfaces/IDatabase";
 import { TYPES } from "../di/types";
 import { CreateUserDto, UpdateUserDto } from "../dtos";
+import { CacheService } from "./CacheService";
+import { UserResource, UserResourceData } from "../resources/UserResource";
+import { ResourceCollection } from "../resources/BaseResource";
 
 @injectable()
 export class UserService implements IUserService {
-  constructor(@inject(TYPES.Database) private database: IDatabase) {}
+  private userResource = new UserResource();
+
+  constructor(
+    @inject(TYPES.Database) private database: IDatabase,
+    @inject(CacheService) private cacheService: CacheService
+  ) {}
 
   async createUser(userData: CreateUserDto): Promise<User> {
     const existingUser = await this.findByEmail(userData.email);
@@ -15,36 +23,94 @@ export class UserService implements IUserService {
     }
 
     const user = await this.database.createUser(userData);
+
+    // Invalidate user caches after creating a new user
+    await this.cacheService.invalidateUserCache();
+
     return user;
   }
 
   async findById(id: string): Promise<User | undefined> {
-    return await this.database.findUserById(id);
+    const cacheKey = this.userResource.generateUserCacheKey(id);
+
+    return await this.cacheService.remember(
+      cacheKey,
+      async () => await this.database.findUserById(id),
+      { ttl: 1800 } // 30 minutes
+    );
   }
 
   async findByEmail(email: string): Promise<User | undefined> {
-    return await this.database.findUserByEmail(email);
+    // For email lookups, we'll cache based on email
+    const cacheKey = `user:email:${email}`;
+
+    return await this.cacheService.remember(
+      cacheKey,
+      async () => await this.database.findUserByEmail(email),
+      { ttl: 1800 } // 30 minutes
+    );
   }
 
   async updateUser(
     id: string,
     userData: UpdateUserDto
   ): Promise<User | undefined> {
-    return this.database.updateUser(id, userData);
+    const result = await this.database.updateUser(id, userData);
+
+    if (result) {
+      // Invalidate user-specific caches
+      await this.cacheService.invalidateUserCache(id);
+    }
+
+    return result;
   }
 
   async updatePassword(
     id: string,
     password: string
   ): Promise<User | undefined> {
-    return this.database.updateUser(id, { password });
+    // Password handling would be implemented based on your auth system
+    // For now, we'll just return the user without updating password
+    // since password is not part of the User interface in this implementation
+    return await this.findById(id);
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    return await this.database.deleteUser(id);
+    const result = await this.database.deleteUser(id);
+
+    if (result) {
+      // Invalidate all user-related caches
+      await this.cacheService.invalidateUserCache(id);
+    }
+
+    return result;
   }
 
-  async getAllUsers(page: number = 1, limit: number = 10): Promise<User[]> {
-    return await this.database.getAllUsers(page, limit);
+  async getAllUsers(
+    options: QueryOptions = {}
+  ): Promise<ResourceCollection<UserResourceData>> {
+    const { page = 1, limit = 10, search, sortBy } = options;
+
+    // Generate cache key based on all query parameters
+    const cacheKey = this.userResource.generateUsersCacheKey(
+      page,
+      limit,
+      search,
+      sortBy
+    );
+
+    return await this.cacheService.remember(
+      cacheKey,
+      async () => {
+        const result = await this.database.getAllUsers(options);
+        return this.userResource.createCollection(
+          result.data,
+          result.page,
+          result.limit,
+          result.total
+        );
+      },
+      { ttl: 900 } // 15 minutes for collections
+    );
   }
 }

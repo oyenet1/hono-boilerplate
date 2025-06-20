@@ -17,6 +17,25 @@ export interface Post {
   updatedAt: Date;
 }
 
+export interface SortField {
+  column: string;
+  order: "asc" | "desc";
+}
+
+export interface QueryOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: SortField[];
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface IDatabase {
   // User methods
   createUser(
@@ -29,7 +48,8 @@ export interface IDatabase {
     userData: Partial<Omit<User, "id" | "createdAt">>
   ): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
-  getAllUsers(page?: number, limit?: number): Promise<User[]>;
+  getAllUsers(options?: QueryOptions): Promise<PaginatedResult<User>>;
+  getUsersCount(search?: string): Promise<number>;
 
   // Post methods
   createPost(
@@ -42,12 +62,12 @@ export interface IDatabase {
     userId: string
   ): Promise<Post | undefined>;
   deletePost(id: string, userId: string): Promise<boolean>;
-  getAllPosts(page?: number, limit?: number): Promise<Post[]>;
+  getAllPosts(options?: QueryOptions): Promise<PaginatedResult<Post>>;
   getPostsByUser(
     userId: string,
-    page?: number,
-    limit?: number
-  ): Promise<Post[]>;
+    options?: QueryOptions
+  ): Promise<PaginatedResult<Post>>;
+  getPostsCount(search?: string, userId?: string): Promise<number>;
 
   // Test helper methods
   clear(): Promise<void>;

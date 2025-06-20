@@ -21,7 +21,7 @@
     "baseUrl": ".",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "types": ["./src/types/global"],
+    // "types": ["./src/types/global"],
     "paths": {
       "@/*": ["src/*"],
       "@/config/*": ["src/config/*"],

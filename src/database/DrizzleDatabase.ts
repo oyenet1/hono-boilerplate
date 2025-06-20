@@ -1,8 +1,13 @@
 import { injectable } from "inversify";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, asc, and, count, ilike, sql } from "drizzle-orm";
 import { db } from "./connection";
 import { users, posts } from "./schema";
-import { IDatabase } from "../interfaces/IDatabase";
+import {
+  IDatabase,
+  QueryOptions,
+  PaginatedResult,
+  SortField,
+} from "../interfaces/IDatabase";
 
 type User = typeof users.$inferSelect;
 type NewUser = typeof users.$inferInsert;
@@ -11,6 +16,91 @@ type NewPost = typeof posts.$inferInsert;
 
 @injectable()
 export class DrizzleDatabase implements IDatabase {
+  // Helper method to build sort clauses
+  private buildSortClause(
+    sortBy?: SortField[],
+    defaultColumn = "createdAt",
+    defaultOrder: "asc" | "desc" = "desc"
+  ) {
+    if (!sortBy || sortBy.length === 0) {
+      // Return default sort
+      if (defaultColumn === "createdAt") {
+        return defaultOrder === "desc"
+          ? desc(users.createdAt)
+          : asc(users.createdAt);
+      }
+      return defaultOrder === "desc" ? desc(users.name) : asc(users.name);
+    }
+
+    // Build sort array from sortBy fields
+    return sortBy.map((sort) => {
+      const column = sort.column;
+      const order = sort.order;
+
+      // Map column names to actual database columns
+      switch (column) {
+        case "name":
+          return order === "desc" ? desc(users.name) : asc(users.name);
+        case "email":
+          return order === "desc" ? desc(users.email) : asc(users.email);
+        case "createdAt":
+          return order === "desc"
+            ? desc(users.createdAt)
+            : asc(users.createdAt);
+        case "updatedAt":
+          return order === "desc"
+            ? desc(users.updatedAt)
+            : asc(users.updatedAt);
+        default:
+          return order === "desc"
+            ? desc(users.createdAt)
+            : asc(users.createdAt);
+      }
+    });
+  }
+
+  // Helper method to build post sort clauses
+  private buildPostSortClause(
+    sortBy?: SortField[],
+    defaultColumn = "createdAt",
+    defaultOrder: "asc" | "desc" = "desc"
+  ) {
+    if (!sortBy || sortBy.length === 0) {
+      // Return default sort
+      if (defaultColumn === "createdAt") {
+        return defaultOrder === "desc"
+          ? desc(posts.createdAt)
+          : asc(posts.createdAt);
+      }
+      return defaultOrder === "desc" ? desc(posts.title) : asc(posts.title);
+    }
+
+    // Build sort array from sortBy fields
+    return sortBy.map((sort) => {
+      const column = sort.column;
+      const order = sort.order;
+
+      // Map column names to actual database columns
+      switch (column) {
+        case "title":
+          return order === "desc" ? desc(posts.title) : asc(posts.title);
+        case "content":
+          return order === "desc" ? desc(posts.content) : asc(posts.content);
+        case "createdAt":
+          return order === "desc"
+            ? desc(posts.createdAt)
+            : asc(posts.createdAt);
+        case "updatedAt":
+          return order === "desc"
+            ? desc(posts.updatedAt)
+            : asc(posts.updatedAt);
+        default:
+          return order === "desc"
+            ? desc(posts.createdAt)
+            : asc(posts.createdAt);
+      }
+    });
+  }
   // User methods
   async createUser(
     userData: Omit<User, "id" | "createdAt" | "updatedAt">
@@ -64,14 +154,64 @@ export class DrizzleDatabase implements IDatabase {
     return (result.rowCount ?? 0) > 0;
   }
 
-  async getAllUsers(page: number = 1, limit: number = 10): Promise<User[]> {
+  async getAllUsers(
+    options: QueryOptions = {}
+  ): Promise<PaginatedResult<User>> {
+    const { page = 1, limit = 10, search, sortBy } = options;
     const offset = (page - 1) * limit;
-    return await db
-      .select()
-      .from(users)
-      .limit(limit)
-      .offset(offset)
-      .orderBy(desc(users.createdAt));
+
+    // Build where clause for search
+    const whereClause = search
+      ? sql`${users.name} ILIKE ${`%${search}%`} OR ${
+          users.email
+        } ILIKE ${`%${search}%`}`
+      : undefined;
+
+    // Get total count for pagination
+    const totalQuery = search
+      ? db.select({ count: count() }).from(users).where(whereClause!)
+      : db.select({ count: count() }).from(users);
+
+    const [{ count: total }] = await totalQuery;
+
+    // Get paginated results with sorting
+    const sortClauses = this.buildSortClause(sortBy);
+
+    const query = db.select().from(users).limit(limit).offset(offset);
+
+    if (whereClause) {
+      query.where(whereClause);
+    }
+
+    if (Array.isArray(sortClauses)) {
+      query.orderBy(...sortClauses);
+    } else {
+      query.orderBy(sortClauses);
+    }
+
+    const data = await query;
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async getUsersCount(search?: string): Promise<number> {
+    const whereClause = search
+      ? sql`${users.name} ILIKE ${`%${search}%`} OR ${
+          users.email
+        } ILIKE ${`%${search}%`}`
+      : undefined;
+
+    const query = whereClause
+      ? db.select({ count: count() }).from(users).where(whereClause)
+      : db.select({ count: count() }).from(users);
+
+    const [{ count: total }] = await query;
+    return total;
   }
 
   // Post methods
@@ -121,29 +261,124 @@ export class DrizzleDatabase implements IDatabase {
     return (result.rowCount ?? 0) > 0;
   }
 
-  async getAllPosts(page: number = 1, limit: number = 10): Promise<Post[]> {
+  async getAllPosts(
+    options: QueryOptions = {}
+  ): Promise<PaginatedResult<Post>> {
+    const { page = 1, limit = 10, search, sortBy } = options;
     const offset = (page - 1) * limit;
-    return await db
-      .select()
-      .from(posts)
-      .limit(limit)
-      .offset(offset)
-      .orderBy(desc(posts.createdAt));
+
+    // Build where clause for search
+    const whereClause = search
+      ? sql`${posts.title} ILIKE ${`%${search}%`} OR ${
+          posts.content
+        } ILIKE ${`%${search}%`}`
+      : undefined;
+
+    // Get total count for pagination
+    const totalQuery = search
+      ? db.select({ count: count() }).from(posts).where(whereClause!)
+      : db.select({ count: count() }).from(posts);
+
+    const [{ count: total }] = await totalQuery;
+
+    // Get paginated results with sorting
+    const sortClauses = this.buildPostSortClause(sortBy);
+
+    const query = db.select().from(posts).limit(limit).offset(offset);
+
+    if (whereClause) {
+      query.where(whereClause);
+    }
+
+    if (Array.isArray(sortClauses)) {
+      query.orderBy(...sortClauses);
+    } else {
+      query.orderBy(sortClauses);
+    }
+
+    const data = await query;
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
   }
 
   async getPostsByUser(
     userId: string,
-    page: number = 1,
-    limit: number = 10
-  ): Promise<Post[]> {
+    options: QueryOptions = {}
+  ): Promise<PaginatedResult<Post>> {
+    const { page = 1, limit = 10, search, sortBy } = options;
     const offset = (page - 1) * limit;
-    return await db
+
+    // Build where clause combining user filter and search
+    let whereClause = eq(posts.userId, userId);
+
+    if (search) {
+      whereClause = and(
+        eq(posts.userId, userId),
+        sql`${posts.title} ILIKE ${`%${search}%`} OR ${
+          posts.content
+        } ILIKE ${`%${search}%`}`
+      )!;
+    }
+
+    // Get total count for pagination
+    const [{ count: total }] = await db
+      .select({ count: count() })
+      .from(posts)
+      .where(whereClause);
+
+    // Get paginated results with sorting
+    const sortClauses = this.buildPostSortClause(sortBy);
+
+    const query = db
       .select()
       .from(posts)
-      .where(eq(posts.userId, userId))
+      .where(whereClause)
       .limit(limit)
-      .offset(offset)
-      .orderBy(desc(posts.createdAt));
+      .offset(offset);
+
+    if (Array.isArray(sortClauses)) {
+      query.orderBy(...sortClauses);
+    } else {
+      query.orderBy(sortClauses);
+    }
+
+    const data = await query;
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async getPostsCount(search?: string, userId?: string): Promise<number> {
+    let whereClause = userId ? eq(posts.userId, userId) : undefined;
+
+    if (search && userId) {
+      whereClause = and(
+        eq(posts.userId, userId),
+        sql`${posts.title} ILIKE ${`%${search}%`} OR ${
+          posts.content
+        } ILIKE ${`%${search}%`}`
+      )!;
+    } else if (search) {
+      whereClause = sql`${posts.title} ILIKE ${`%${search}%`} OR ${
+        posts.content
+      } ILIKE ${`%${search}%`}`;
+    }
+
+    const query = whereClause
+      ? db.select({ count: count() }).from(posts).where(whereClause)
+      : db.select({ count: count() }).from(posts);
+
+    const [{ count: total }] = await query;
+    return total;
   }
 
   // Test helper methods (for development/testing only)

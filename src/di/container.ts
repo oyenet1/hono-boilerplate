@@ -13,6 +13,7 @@ import { DrizzleDatabase } from "../database/DrizzleDatabase";
 import { UserService } from "../services/UserService";
 import { SecureAuthService } from "../services/SecureAuthService";
 import { PostService } from "../services/PostService";
+import { CacheService } from "../services/CacheService";
 import { UserController } from "../controllers/UserController";
 import { AuthController } from "../controllers/AuthController";
 import { PostController } from "../controllers/PostController";
@@ -26,6 +27,7 @@ container
   .inSingletonScope();
 
 // Services
+container.bind<CacheService>(CacheService).toSelf().inSingletonScope();
 container.bind<IUserService>(TYPES.UserService).to(UserService);
 container.bind<IAuthService>(TYPES.AuthService).to(SecureAuthService);
 container.bind<IPostService>(TYPES.PostService).to(PostService);

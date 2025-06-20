@@ -1,5 +1,7 @@
-import { User } from "../interfaces/IDatabase";
+import { User, QueryOptions } from "../interfaces/IDatabase";
 import { CreateUserDto, UpdateUserDto } from "../dtos";
+import { ResourceCollection } from "../resources/BaseResource";
+import { UserResourceData } from "../resources/UserResource";
 
 export interface IUserService {
   createUser(userData: CreateUserDto): Promise<User>;
@@ -8,5 +10,7 @@ export interface IUserService {
   updateUser(id: string, userData: UpdateUserDto): Promise<User | undefined>;
   updatePassword(id: string, password: string): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
-  getAllUsers(page?: number, limit?: number): Promise<User[]>;
+  getAllUsers(
+    options?: QueryOptions
+  ): Promise<ResourceCollection<UserResourceData>>;
 }

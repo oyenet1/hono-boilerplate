@@ -3,19 +3,42 @@ import { Context } from "hono";
 import type { IPostService } from "../interfaces/IPostService";
 import { TYPES } from "../di/types";
 import { ApiResponse } from "../utils/response";
+import { PostResource } from "../resources/PostResource";
+import { SortField } from "../interfaces/IDatabase";
 
 @injectable()
 export class PostController {
+  private postResource = new PostResource();
+
   constructor(@inject(TYPES.PostService) private postService: IPostService) {}
 
   async getPosts(c: Context) {
     try {
-      const { page = 1, limit = 10 } = c.req.query();
-      const posts = await this.postService.getAllPosts(
-        Number(page),
-        Number(limit)
-      );
-      return ApiResponse.success(c, posts, "Posts retrieved successfully");
+      const query = c.req.query();
+      const page = Number(query.page) || 1;
+      const limit = Number(query.limit) || 10;
+      const search = query.search || undefined;
+
+      // Parse sortBy parameter: ?sortBy=title:asc,createdAt:desc
+      let sortBy: SortField[] | undefined;
+      if (query.sortBy) {
+        sortBy = query.sortBy.split(",").map((sort) => {
+          const [column, order] = sort.split(":");
+          return {
+            column,
+            order: (order as "asc" | "desc") || "asc",
+          };
+        });
+      }
+
+      const result = await this.postService.getAllPosts({
+        page,
+        limit,
+        search,
+        sortBy,
+      });
+
+      return ApiResponse.success(c, result, "Posts retrieved successfully");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to get posts";
@@ -29,11 +52,19 @@ export class PostController {
       if (!id) {
         return ApiResponse.error(c, "Post ID is required", 400);
       }
+
       const post = await this.postService.findById(id);
       if (!post) {
         return ApiResponse.error(c, "Post not found", 404);
       }
-      return ApiResponse.success(c, post, "Post retrieved successfully");
+
+      // Transform the post using the resource
+      const transformedPost = this.postResource.transform(post);
+      return ApiResponse.success(
+        c,
+        transformedPost,
+        "Post retrieved successfully"
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to get post";
@@ -48,8 +79,16 @@ export class PostController {
       if (!userId) {
         return ApiResponse.unauthorized(c, "User authentication required");
       }
+
       const post = await this.postService.createPost(postData, userId);
-      return ApiResponse.created(c, post, "Post created successfully");
+
+      // Transform the created post using the resource
+      const transformedPost = this.postResource.transform(post);
+      return ApiResponse.created(
+        c,
+        transformedPost,
+        "Post created successfully"
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to create post";
@@ -65,11 +104,19 @@ export class PostController {
       if (!userId) {
         return ApiResponse.unauthorized(c, "User authentication required");
       }
+
       const post = await this.postService.updatePost(id, postData, userId);
       if (!post) {
         return ApiResponse.notFound(c, "Post not found or unauthorized");
       }
-      return ApiResponse.success(c, post, "Post updated successfully");
+
+      // Transform the updated post using the resource
+      const transformedPost = this.postResource.transform(post);
+      return ApiResponse.success(
+        c,
+        transformedPost,
+        "Post updated successfully"
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to update post";
@@ -99,16 +146,39 @@ export class PostController {
   async getUserPosts(c: Context) {
     try {
       const userId = c.get("userId");
-      const { page = 1, limit = 10 } = c.req.query();
+      const query = c.req.query();
+      const page = Number(query.page) || 1;
+      const limit = Number(query.limit) || 10;
+      const search = query.search || undefined;
+
       if (!userId) {
         return ApiResponse.unauthorized(c, "User authentication required");
       }
-      const posts = await this.postService.getPostsByUser(
-        userId,
-        Number(page),
-        Number(limit)
+
+      // Parse sortBy parameter
+      let sortBy: SortField[] | undefined;
+      if (query.sortBy) {
+        sortBy = query.sortBy.split(",").map((sort) => {
+          const [column, order] = sort.split(":");
+          return {
+            column,
+            order: (order as "asc" | "desc") || "asc",
+          };
+        });
+      }
+
+      const result = await this.postService.getPostsByUser(userId, {
+        page,
+        limit,
+        search,
+        sortBy,
+      });
+
+      return ApiResponse.success(
+        c,
+        result,
+        "User posts retrieved successfully"
       );
-      return ApiResponse.success(c, posts, "User posts retrieved successfully");
     } catch (error) {
       const message =
         error instanceof Error
