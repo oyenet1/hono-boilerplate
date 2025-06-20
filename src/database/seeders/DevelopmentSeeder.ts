@@ -23,7 +23,7 @@ export class DevelopmentSeeder extends BaseSeeder {
       // Sample data arrays for realistic seeding
       const postTitles = [
         "Getting Started with TypeScript",
-        "The Future of Web Development", 
+        "The Future of Web Development",
         "Building Scalable APIs",
         "Database Design Best Practices",
         "Understanding Microservices",
@@ -61,7 +61,7 @@ export class DevelopmentSeeder extends BaseSeeder {
         "Error Handling Strategies",
         "Performance Optimization Tips",
         "Accessibility in Web Development",
-        "SEO for Single Page Applications"
+        "SEO for Single Page Applications",
       ];
 
       const postContents = [
@@ -104,7 +104,7 @@ export class DevelopmentSeeder extends BaseSeeder {
         "Proper error handling is crucial for robust applications. Learn strategies for handling errors gracefully and providing good user experiences.",
         "Performance optimization is an ongoing process. This comprehensive guide covers profiling, optimization techniques, and monitoring.",
         "Web accessibility ensures your applications are usable by everyone. Learn the principles and techniques for building inclusive web experiences.",
-        "SEO for single-page applications requires special consideration. Learn how to make your SPA discoverable and indexable by search engines."
+        "SEO for single-page applications requires special consideration. Learn how to make your SPA discoverable and indexable by search engines.",
       ];
 
       // Seed the database with refined data
@@ -155,7 +155,9 @@ export class DevelopmentSeeder extends BaseSeeder {
       this.logSuccess("Development environment seeded successfully!");
       this.log("📊 Generated:");
       this.log("   - 100 users with realistic names and emails");
-      this.log("   - Posts distributed across users with weighted randomization");
+      this.log(
+        "   - Posts distributed across users with weighted randomization"
+      );
       this.log("   - Expected ~700-900 total posts based on distribution");
       this.log("   - Each user has 1-15 posts (most have 3-8 posts)");
       this.log("   - Mixture of predefined and generated content");
