@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { existEmail } from "../validators/emailValidation";
 
 // User DTOs
 export const CreateUserDto = z.object({
@@ -8,7 +9,7 @@ export const CreateUserDto = z.object({
 });
 
 export const LoginDto = z.object({
-  email: z.string().email("Invalid email format"),
+  email: existEmail,
   password: z.string().min(1, "Password is required"),
 });
 

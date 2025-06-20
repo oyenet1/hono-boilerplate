@@ -1,7 +1,7 @@
 import { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { ZodError } from "zod";
-import { ResponseHelper } from "./response";
+import { ApiResponse } from "./response";
 
 /**
  * Global error handler middleware that catches all errors and returns consistent JSON responses
@@ -25,7 +25,7 @@ export const errorHandler = async (c: Context, next: Next) => {
         // If parsing fails, treat as regular message
       }
 
-      return ResponseHelper.error(
+      return ApiResponse.error(
         c,
         err.message || "An error occurred",
         err.status
@@ -39,7 +39,7 @@ export const errorHandler = async (c: Context, next: Next) => {
         return field ? `${field}: ${error.message}` : error.message;
       });
 
-      return ResponseHelper.validationError(
+      return ApiResponse.validationError(
         c,
         "Validation failed. Please check your input",
         formattedErrors
@@ -54,11 +54,11 @@ export const errorHandler = async (c: Context, next: Next) => {
           ? "Something went wrong. Please try again later"
           : err.message;
 
-      return ResponseHelper.error(c, message, 500);
+      return ApiResponse.error(c, message, 500);
     }
 
     // Handle unknown errors
-    return ResponseHelper.error(
+    return ApiResponse.error(
       c,
       "An unexpected error occurred. Please try again later",
       500

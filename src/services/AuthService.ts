@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import { hash, compare } from "bcryptjs";
-import { sign } from "hono/jwt";
+import { sign, verify } from "hono/jwt";
 import type { IAuthService } from "../interfaces/IAuthService";
 import type { IUserService } from "../interfaces/IUserService";
 import { TYPES } from "../di/types";
@@ -11,6 +11,19 @@ import { createId } from "@paralleldrive/cuid2";
 @injectable()
 export class AuthService implements IAuthService {
   constructor(@inject(TYPES.UserService) private userService: IUserService) {}
+  async getProfile(userId: string): Promise<any | null> {
+    const user = await this.userService.findById(userId);
+    if (!user) {
+      return null;
+    }
+    // Return only safe user fields
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+    };
+  }
 
   async register(
     userData: CreateUserDto,
@@ -27,7 +40,7 @@ export class AuthService implements IAuthService {
   }> {
     const hashedPassword = await hash(
       userData.password,
-      appConfig.bcryptRounds
+      appConfig.security.bcryptRounds
     );
 
     const user = await this.userService.createUser({
@@ -121,11 +134,10 @@ export class AuthService implements IAuthService {
     userId: string,
     sessionId: string
   ): Promise<string> {
-    return await sign({ userId, sessionId }, appConfig.jwtSecret);
+    return await sign({ userId, sessionId }, appConfig.jwt.secret);
   }
 
   private async verifyToken(token: string): Promise<any> {
-    const { sign, verify } = await import("hono/jwt");
-    return await verify(token, appConfig.jwtSecret);
+    return await verify(token, appConfig.jwt.secret);
   }
 }

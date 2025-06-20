@@ -9,7 +9,7 @@ import {
 import { errorHandler } from "./utils/errorHandlers";
 import { v1 } from "./routes/v1";
 import { redisManager } from "./config/redis";
-import { ResponseHelper } from "./utils/response";
+import { ApiResponse } from "./utils/response";
 
 const app = new Hono();
 
@@ -39,7 +39,7 @@ app.get("/", (c) => {
     timestamp: new Date().toISOString(),
   };
 
-  return ResponseHelper.success(
+  return ApiResponse.success(
     c,
     appData,
     "Hono MVC Boilerplate API - Secure Edition"
@@ -51,7 +51,7 @@ app.get("/", (c) => {
 
 // 404 handler
 app.notFound((c) => {
-  return ResponseHelper.notFound(c, "Route not found");
+  return ApiResponse.notFound(c, "Route not found");
 });
 
 // Graceful shutdown handling

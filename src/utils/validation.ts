@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { ResponseHelper } from "./response";
+import { ApiResponse } from "./response";
 
 export class ValidationHelper {
   static validateBody<T>(schema: z.ZodSchema<T>, data: unknown): T {

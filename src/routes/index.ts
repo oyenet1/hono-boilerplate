@@ -3,7 +3,7 @@ import { authRoute } from "./authRoute";
 import { userRoute } from "./userRoute";
 import { postRoute } from "./postRoute";
 import { rateLimits } from "../middleware/security";
-import { ResponseHelper } from "../utils/response";
+import { ApiResponse } from "../utils/response";
 import { HealthChecker } from "../utils/healthChecker";
 
 const routes = new Hono();
@@ -33,7 +33,7 @@ routes.get("/health", async (c) => {
         ? "Service is functional but some features may be limited"
         : "Service is experiencing issues";
 
-    return ResponseHelper.success(c, healthStatus, message, httpStatus);
+    return ApiResponse.success(c, healthStatus, message, httpStatus);
   } catch (error) {
     console.error("Health check failed:", error);
 
@@ -50,7 +50,7 @@ routes.get("/health", async (c) => {
       error: error instanceof Error ? error.message : "Unknown error",
     };
 
-    return ResponseHelper.error(c, "Health check failed", 503);
+    return ApiResponse.error(c, "Health check failed", 503);
   }
 });
 

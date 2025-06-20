@@ -1,7 +1,7 @@
 import { ZodSchema } from "zod";
 import { zValidator as zv } from "@hono/zod-validator";
 import type { ValidationTargets } from "hono";
-import { ResponseHelper } from "../utils/response";
+import { ApiResponse } from "../utils/response";
 
 export const zValidator = <
   T extends ZodSchema,
@@ -25,8 +25,8 @@ export const zValidator = <
         return acc;
       }, {} as Record<string, string>);
 
-      // Return a structured error response using ResponseHelper
-      return ResponseHelper.badRequest(c, "Validation failed", errorMessages);
+      // Return a structured error response using ApiResponse
+      return ApiResponse.badRequest(c, "Validation failed", errorMessages);
     }
   });
 

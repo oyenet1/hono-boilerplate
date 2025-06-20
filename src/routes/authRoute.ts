@@ -3,7 +3,7 @@ import { container } from "../di/container";
 import { TYPES } from "../di/types";
 import { AuthController } from "../controllers/AuthController";
 import { rateLimits } from "../middleware/security";
-import { validateJson } from "../utils/zValidator";
+import { validateJson, zValidator } from "../utils/zValidator";
 import { CreateUserDto, LoginDto } from "../dtos";
 import { secureAuthMiddleware } from "../middleware/security";
 
@@ -17,7 +17,7 @@ authRoute.use("*", rateLimits.auth);
 authRoute.post("/register", validateJson(CreateUserDto), (c) =>
   authController.register(c)
 );
-authRoute.post("/login", validateJson(LoginDto), (c) =>
+authRoute.post("/login", zValidator("json", LoginDto), (c) =>
   authController.login(c)
 );
 authRoute.post("/logout", (c) => authController.logout(c));

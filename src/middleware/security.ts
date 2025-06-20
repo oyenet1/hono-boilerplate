@@ -6,7 +6,7 @@ import { container } from "../di/container";
 import { TYPES } from "../di/types";
 import { SecureAuthService } from "../services/SecureAuthService";
 import { TokenExtractor } from "../utils/tokenExtractor";
-import { ResponseHelper } from "../utils/response";
+import { ApiResponse } from "../utils/response";
 
 export interface RateLimitConfig {
   windowMs: number;
@@ -20,7 +20,7 @@ export const secureAuthMiddleware = async (c: Context, next: Next) => {
   const token = TokenExtractor.getTokenSafe(c);
 
   if (!token) {
-    return ResponseHelper.error(c, "Authentication token is required", 401);
+    return ApiResponse.error(c, "Authentication token is required", 401);
   }
 
   try {
@@ -28,7 +28,7 @@ export const secureAuthMiddleware = async (c: Context, next: Next) => {
     const sessionData = await authService.verifySession(token);
 
     if (!sessionData) {
-      return ResponseHelper.error(
+      return ApiResponse.error(
         c,
         "Your session has expired. Please login again",
         401
@@ -55,7 +55,7 @@ export const secureAuthMiddleware = async (c: Context, next: Next) => {
       error instanceof Error
         ? error.message
         : "Authentication failed. Please login to continue";
-    return ResponseHelper.error(c, message, 401);
+    return ApiResponse.error(c, message, 401);
   }
 };
 

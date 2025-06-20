@@ -2,7 +2,7 @@ import { inject, injectable } from "inversify";
 import { Context } from "hono";
 import type { IUserService } from "../interfaces/IUserService";
 import { TYPES } from "../di/types";
-import { ResponseHelper } from "../utils/response";
+import { ApiResponse } from "../utils/response";
 import {
   NotFoundError,
   BadRequestError,
@@ -20,11 +20,11 @@ export class UserController {
         Number(page),
         Number(limit)
       );
-      return ResponseHelper.success(c, users, "Users retrieved successfully");
+      return ApiResponse.success(c, users, "Users retrieved successfully");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to get users";
-      return ResponseHelper.error(c, message, 500);
+      return ApiResponse.error(c, message, 500);
     }
   }
 
@@ -32,17 +32,17 @@ export class UserController {
     try {
       const id = c.req.param("id");
       if (!id) {
-        return ResponseHelper.error(c, "User ID is required", 400);
+        return ApiResponse.error(c, "User ID is required", 400);
       }
       const user = await this.userService.findById(id);
       if (!user) {
-        return ResponseHelper.error(c, "User not found", 404);
+        return ApiResponse.error(c, "User not found", 404);
       }
-      return ResponseHelper.success(c, user, "User retrieved successfully");
+      return ApiResponse.success(c, user, "User retrieved successfully");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to get user";
-      return ResponseHelper.error(c, message, 500);
+      return ApiResponse.error(c, message, 500);
     }
   }
 
@@ -50,18 +50,18 @@ export class UserController {
     try {
       const id = c.req.param("id");
       if (!id) {
-        return ResponseHelper.error(c, "User ID is required", 400);
+        return ApiResponse.error(c, "User ID is required", 400);
       }
       const userData = await c.req.json();
       const user = await this.userService.updateUser(id, userData);
       if (!user) {
-        return ResponseHelper.error(c, "User not found", 404);
+        return ApiResponse.error(c, "User not found", 404);
       }
-      return ResponseHelper.success(c, user, "User updated successfully");
+      return ApiResponse.success(c, user, "User updated successfully");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to update user";
-      return ResponseHelper.error(c, message, 500);
+      return ApiResponse.error(c, message, 500);
     }
   }
 
@@ -69,17 +69,17 @@ export class UserController {
     try {
       const id = c.req.param("id");
       if (!id) {
-        return ResponseHelper.error(c, "User ID is required", 400);
+        return ApiResponse.error(c, "User ID is required", 400);
       }
       const deleted = await this.userService.deleteUser(id);
       if (!deleted) {
-        return ResponseHelper.error(c, "User not found", 404);
+        return ApiResponse.error(c, "User not found", 404);
       }
-      return ResponseHelper.success(c, null, "User deleted successfully");
+      return ApiResponse.success(c, null, "User deleted successfully");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to delete user";
-      return ResponseHelper.error(c, message, 500);
+      return ApiResponse.error(c, message, 500);
     }
   }
 }

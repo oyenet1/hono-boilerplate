@@ -2,7 +2,7 @@ import { inject, injectable } from "inversify";
 import { Context } from "hono";
 import type { IAuthService } from "../interfaces/IAuthService";
 import { TYPES } from "../di/types";
-import { ResponseHelper } from "../utils/response";
+import { ApiResponse } from "../utils/response";
 import { TokenExtractor } from "../utils/tokenExtractor";
 import {
   BadRequestError,
@@ -22,11 +22,11 @@ export class AuthController {
 
       const result = await this.authService.register(userData, ipAddress);
 
-      return ResponseHelper.created(c, result, "User registered successfully");
+      return ApiResponse.created(c, result, "User registered successfully");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Registration failed";
-      return ResponseHelper.error(c, message, 400);
+      return ApiResponse.error(c, message, 400);
     }
   }
 
@@ -43,10 +43,10 @@ export class AuthController {
         userAgent
       );
 
-      return ResponseHelper.success(c, result, "Login successful");
+      return ApiResponse.success(c, result, "Login successful");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed";
-      return ResponseHelper.error(c, message, 401);
+      return ApiResponse.error(c, message, 401);
     }
   }
 
@@ -54,7 +54,7 @@ export class AuthController {
     try {
       const sessionData = c.get("sessionData");
       if (!sessionData) {
-        return ResponseHelper.error(c, "No active session found", 400);
+        return ApiResponse.error(c, "No active session found", 400);
       }
 
       // Extract token using the TokenExtractor utility
@@ -64,10 +64,10 @@ export class AuthController {
         // For now, we'll implement a simple logout
       }
 
-      return ResponseHelper.success(c, null, "Logout successful");
+      return ApiResponse.success(c, null, "Logout successful");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Logout failed";
-      return ResponseHelper.error(c, message, 400);
+      return ApiResponse.error(c, message, 400);
     }
   }
 
@@ -76,24 +76,20 @@ export class AuthController {
       const { sessionId } = await c.req.json();
 
       if (!sessionId) {
-        return ResponseHelper.error(c, "Session ID required", 400);
+        return ApiResponse.error(c, "Session ID required", 400);
       }
 
       const result = await this.authService.refreshSession(sessionId);
 
       if (!result) {
-        return ResponseHelper.error(c, "Invalid session", 401);
+        return ApiResponse.error(c, "Invalid session", 401);
       }
 
-      return ResponseHelper.success(
-        c,
-        result,
-        "Session refreshed successfully"
-      );
+      return ApiResponse.success(c, result, "Session refreshed successfully");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Session refresh failed";
-      return ResponseHelper.error(c, message, 400);
+      return ApiResponse.error(c, message, 400);
     }
   }
 
@@ -101,20 +97,20 @@ export class AuthController {
     try {
       const userId = c.get("userId");
       if (!userId) {
-        return ResponseHelper.error(c, "User not authenticated", 401);
+        return ApiResponse.error(c, "User not authenticated", 401);
       }
 
       // Fetch user profile from the authService (or userService if preferred)
       const user = await this.authService.getProfile(userId);
       if (!user) {
-        return ResponseHelper.error(c, "User not found", 404);
+        return ApiResponse.error(c, "User not found", 404);
       }
 
-      return ResponseHelper.success(c, user, "Profile retrieved successfully");
+      return ApiResponse.success(c, user, "Profile retrieved successfully");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to retrieve profile";
-      return ResponseHelper.error(c, message, 400);
+      return ApiResponse.error(c, message, 400);
     }
   }
 }

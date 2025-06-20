@@ -1,6 +1,6 @@
 import { Context } from "hono";
 
-export interface ApiResponse<T = any> {
+export interface ApiResponseData<T = any> {
   success: boolean;
   message: string;
   data?: T;
@@ -13,15 +13,15 @@ export interface ApiResponse<T = any> {
   };
 }
 
-export class ResponseHelper {
+export class ApiResponse {
   static success<T>(
     c: Context,
     data: T,
     message: string = "Success",
     status: number = 200,
-    meta?: ApiResponse<T>["meta"]
+    meta?: ApiResponseData<T>["meta"]
   ) {
-    const response: ApiResponse<T> = {
+    const response: ApiResponseData<T> = {
       success: true,
       message,
       data,
@@ -40,7 +40,7 @@ export class ResponseHelper {
     status: number = 500,
     errors?: string[]
   ) {
-    const response: ApiResponse = {
+    const response: ApiResponseData = {
       success: false,
       message,
     };
