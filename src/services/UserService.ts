@@ -26,7 +26,7 @@ export class UserService implements IUserService {
 
     // Invalidate all user-related caches after creating a new user
     await this.cacheService.invalidateUserCache();
-    
+
     console.log(`✅ User created and cache invalidated for: ${user.email}`);
 
     return user;
@@ -62,7 +62,7 @@ export class UserService implements IUserService {
     if (result) {
       // Invalidate user-specific caches and email cache if email was updated
       await this.cacheService.invalidateUserCache(id);
-      
+
       console.log(`🔄 User updated and cache invalidated for ID: ${id}`);
     }
 
@@ -85,7 +85,7 @@ export class UserService implements IUserService {
     if (result) {
       // Invalidate all user-related caches
       await this.cacheService.invalidateUserCache(id);
-      
+
       console.log(`🗑️ User deleted and cache invalidated for ID: ${id}`);
     }
 

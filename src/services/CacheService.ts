@@ -44,14 +44,22 @@ export class CacheService {
     try {
       // Use the client directly for pattern operations
       const client = redisManager.getClient();
+
+      // Get all keys that match the pattern (Redis automatically applies prefix)
       const keys = await client.keys(pattern);
+      console.log(
+        `🔍 Found ${keys.length} keys matching pattern "${pattern}":`,
+        keys
+      );
+
       if (keys.length > 0) {
-        // Remove the Redis prefix from keys before deleting
-        const keysWithoutPrefix = keys.map(key => 
-          key.startsWith('hono:') ? key.substring(5) : key
-        );
+        // Delete keys without prefix since Redis client handles it
+        const keysWithoutPrefix = keys.map((key) => key.replace(/^hono:/, ""));
         await client.del(...keysWithoutPrefix);
-        console.log(`🗑️ Deleted ${keys.length} keys matching pattern: ${pattern}`);
+        console.log(
+          `🗑️ Deleted ${keysWithoutPrefix.length} keys:`,
+          keysWithoutPrefix
+        );
       }
     } catch (error) {
       console.error(`Error deleting cache pattern ${pattern}:`, error);
@@ -85,38 +93,41 @@ export class CacheService {
     return result;
   }
 
+  // Invalidate ALL caches (for create, update, delete operations)
+  async invalidateAllCaches(): Promise<void> {
+    try {
+      console.log("🧹 Invalidating ALL caches...");
+      const client = redisManager.getClient();
+
+      // Get all cache keys (excluding session keys and other non-cache data)
+      const allKeys = await client.keys("*");
+      const cacheKeys = allKeys.filter(
+        (key) =>
+          !key.includes("session:") &&
+          !key.includes("rate_limit:") &&
+          !key.includes("auth:")
+      );
+
+      if (cacheKeys.length > 0) {
+        const keysWithoutPrefix = cacheKeys.map((key) =>
+          key.replace(/^hono:/, "")
+        );
+        await client.del(...keysWithoutPrefix);
+        console.log(`🗑️ Deleted ${keysWithoutPrefix.length} cache keys`);
+      }
+    } catch (error) {
+      console.error("Error invalidating all caches:", error);
+    }
+  }
+
   // Invalidate related cache keys
   async invalidateUserCache(userId?: string): Promise<void> {
-    // Clear ALL user-related cache patterns
-    const patterns = [
-      "users:*",       // All user collections
-      "user:*",        // All individual users (including by ID and email)
-    ];
-
-    for (const pattern of patterns) {
-      await this.deletePattern(pattern);
-    }
-    
-    console.log(`🗑️ Invalidated ALL user cache patterns for user: ${userId || 'all'}`);
+    // For any user operation, clear all caches to ensure consistency
+    await this.invalidateAllCaches();
   }
 
   async invalidatePostCache(userId?: string): Promise<void> {
-    // Clear ALL post-related cache patterns  
-    const patterns = [
-      "posts:*",       // All post collections
-      "post:*",        // All individual posts
-    ];
-
-    for (const pattern of patterns) {
-      await this.deletePattern(pattern);
-    }
-    
-    console.log(`🗑️ Invalidated ALL post cache patterns for user: ${userId || 'all'}`);
-  }
-
-  // Clear all application cache
-  async invalidateAllCache(): Promise<void> {
-    await this.clear();
-    console.log(`🗑️ Cleared ALL application cache`);
+    // For any post operation, clear all caches to ensure consistency
+    await this.invalidateAllCaches();
   }
 }
