@@ -149,25 +149,24 @@ export const createRateLimitMiddleware = (rateLimitConfig: RateLimitConfig) => {
 
 // Predefined rate limit configurations - Optimized for 10K+ users
 export const rateLimits = {
-  // Authentication endpoints - increased for scale
   auth: createRateLimitMiddleware({
     windowMs: 5 * 60 * 1000, // 5 minutes
-    max: 50, // Increased from 10 to 50 for higher traffic
+    max: 50,
     message: "Too many authentication attempts, please try again later",
   }),
 
   // OTP sending - slightly more flexible
   otpSend: createRateLimitMiddleware({
-    windowMs: 3 * 60 * 1000, // 3 minutes (reduced from 5)
-    max: 2, // Increased from 1 to 2 for better UX
+    windowMs: 5 * 60 * 1000, // 5 minutes (reduced from 5)
+    max: 1,
     message:
-      "OTP can only be sent twice every 3 minutes. Please wait before requesting another OTP",
+      "OTP can only be sent once every 5 minutes. Please wait before requesting another OTP",
   }),
 
   // OTP verification - more attempts allowed
   otpVerify: createRateLimitMiddleware({
-    windowMs: 5 * 60 * 1000, // 5 minutes
-    max: 10, // Increased from 3 to 10 for better UX
+    windowMs: 5 * 60 * 1000,
+    max: 3,
     message:
       "Too many OTP verification attempts. Please wait 5 minutes before trying again",
   }),

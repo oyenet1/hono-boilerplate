@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { authRoute } from "./authRoute";
 import { userRoute } from "./userRoute";
 import { postRoute } from "./postRoute";
+import { monitoringRoute } from "./monitoringRoute";
 import { rateLimits } from "../middleware/security";
 import { ApiResponse } from "../utils/response";
 import { HealthChecker } from "../utils/healthChecker";
@@ -13,6 +14,7 @@ const routes = new Hono();
 routes.route("/auth", authRoute);
 routes.route("/users", userRoute);
 routes.route("/posts", postRoute);
+routes.route("/monitoring", monitoringRoute);
 
 // Health check endpoint - NO rate limiting for infrastructure monitoring
 routes.get("/health", async (c) => {

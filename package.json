@@ -27,6 +27,7 @@
     "@paralleldrive/cuid2": "^2.2.2",
     "@types/ioredis": "^5.0.0",
     "bcryptjs": "^2.4.3",
+    "bullmq": "^5.56.9",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.44.2",
     "drizzle-seed": "^0.3.1",

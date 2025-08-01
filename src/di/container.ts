@@ -7,6 +7,7 @@ import { CacheService } from "../services/CacheService";
 import { UserService } from "../services/UserService";
 import { SecureAuthService } from "../services/SecureAuthService";
 import { PostService } from "../services/PostService";
+import { UserCacheService } from "../services/UserCacheService";
 import { UserController } from "../controllers/UserController";
 import { AuthController } from "../controllers/AuthController";
 import { PostController } from "../controllers/PostController";
@@ -21,6 +22,7 @@ container.bind(CacheService).toSelf().inSingletonScope();
 container.bind(UserService).toSelf();
 container.bind(SecureAuthService).toSelf();
 container.bind(PostService).toSelf();
+container.bind(UserCacheService).toSelf().inSingletonScope();
 
 // Controllers
 container.bind(UserController).toSelf();
