@@ -34,22 +34,4 @@ export class UserResource extends BaseResource<User, UserResourceData> {
 
     return transformed;
   }
-
-  // Generate cache key for user collections
-  generateUsersCacheKey(
-    page: number = 1,
-    limit: number = 10,
-    search?: string,
-    sortBy?: Array<{ column: string; order: "asc" | "desc" }>
-  ): string {
-    return this.generateCacheKey({
-      prefix: "users",
-      params: { page, limit, search, sortBy },
-    });
-  }
-
-  // Generate cache key for a specific user
-  generateUserCacheKey(userId: string): string {
-    return `user:${userId}`;
-  }
 }

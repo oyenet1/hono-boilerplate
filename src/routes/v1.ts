@@ -5,6 +5,9 @@ import { postRoute } from "./postRoute";
 import { ApiResponse } from "../utils/response";
 import { HealthChecker } from "../utils/healthChecker";
 import { formatUptime } from "../utils/formatters";
+import { container } from "../di/container";
+import { CacheService } from "../services/CacheService";
+import { secureAuthMiddleware } from "../middleware/security";
 
 const v1 = new Hono().basePath("/v1");
 
@@ -62,6 +65,60 @@ v1.get("/ping", async (c) => {
     return ApiResponse.success(c, null, "Service is healthy");
   } else {
     return ApiResponse.error(c, "SERVICE_UNAVAILABLE", 503);
+  }
+});
+
+// Cache management endpoints (protected)
+v1.delete("/cache", async (c) => {
+  try {
+    const cacheService = container.get(CacheService);
+    await cacheService.invalidateAllCaches();
+
+    return ApiResponse.success(c, null, "All caches invalidated successfully");
+  } catch (error) {
+    console.error("Error invalidating all caches:", error);
+    return ApiResponse.error(c, "Failed to invalidate caches", 500);
+  }
+});
+
+v1.delete("/cache/users", secureAuthMiddleware, async (c) => {
+  try {
+    const cacheService = container.get(CacheService);
+    await cacheService.invalidateUserCache();
+
+    return ApiResponse.success(c, null, "User caches invalidated successfully");
+  } catch (error) {
+    console.error("Error invalidating user caches:", error);
+    return ApiResponse.error(c, "Failed to invalidate user caches", 500);
+  }
+});
+
+v1.delete("/cache/posts", secureAuthMiddleware, async (c) => {
+  try {
+    const cacheService = container.get(CacheService);
+    await cacheService.invalidatePostCache();
+
+    return ApiResponse.success(c, null, "Post caches invalidated successfully");
+  } catch (error) {
+    console.error("Error invalidating post caches:", error);
+    return ApiResponse.error(c, "Failed to invalidate post caches", 500);
+  }
+});
+
+v1.delete("/cache/users/:id", secureAuthMiddleware, async (c) => {
+  try {
+    const userId = c.req.param("id");
+    const cacheService = container.get(CacheService);
+    await cacheService.invalidateUserCache(userId);
+
+    return ApiResponse.success(
+      c,
+      null,
+      `User cache for ID ${userId} invalidated successfully`
+    );
+  } catch (error) {
+    console.error("Error invalidating user cache:", error);
+    return ApiResponse.error(c, "Failed to invalidate user cache", 500);
   }
 });
 

@@ -33,7 +33,7 @@ export class UserService implements IUserService {
   }
 
   async findById(id: string): Promise<User | undefined> {
-    const cacheKey = this.userResource.generateUserCacheKey(id);
+    const cacheKey = this.cacheService.generateUserCacheKey(id);
 
     return await this.cacheService.remember(
       cacheKey,
@@ -44,7 +44,7 @@ export class UserService implements IUserService {
 
   async findByEmail(email: string): Promise<User | undefined> {
     // For email lookups, we'll cache based on email
-    const cacheKey = `user:email:${email}`;
+    const cacheKey = this.cacheService.generateUserEmailCacheKey(email);
 
     return await this.cacheService.remember(
       cacheKey,
@@ -98,7 +98,7 @@ export class UserService implements IUserService {
     const { page = 1, limit = 10, search, sortBy } = options;
 
     // Generate cache key based on all query parameters
-    const cacheKey = this.userResource.generateUsersCacheKey(
+    const cacheKey = this.cacheService.generateUsersCacheKey(
       page,
       limit,
       search,
