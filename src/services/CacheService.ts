@@ -3,7 +3,7 @@ import { redisManager } from "../config/redis";
 import { parseAsync, stringifyAsync } from "../utils/asyncJson";
 
 export interface CacheOptions {
-  ttl?: number; // Time to live in seconds
+  ttl?: number;
 }
 
 @injectable()
