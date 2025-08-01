@@ -3,6 +3,7 @@ import "dotenv/config";
 const parsedBcryptRounds = parseInt(process.env.BCRYPT_ROUNDS || "12");
 
 export const appConfig = {
+  host: process.env.HOST || "0.0.0.0",
   port: Number(process.env.PORT) || 3000,
   env: process.env.NODE_ENV || "development",
   database: {

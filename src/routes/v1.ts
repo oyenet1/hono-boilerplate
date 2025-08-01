@@ -58,9 +58,9 @@ v1.get("/ping", async (c) => {
   const isHealthy = await HealthChecker.isHealthy();
 
   if (isHealthy) {
-    return c.json("OK", 200);
+    return ApiResponse.success(c, null, "Service is healthy");
   } else {
-    return c.json("SERVICE_UNAVAILABLE", 503);
+    return ApiResponse.error(c, "SERVICE_UNAVAILABLE", 503);
   }
 });
 

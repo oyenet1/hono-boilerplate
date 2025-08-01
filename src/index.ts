@@ -105,7 +105,7 @@ const startupCheck = async () => {
     );
   }
 
-  console.log(`✅ Server ready at http://localhost:${config.port}`);
+  console.log(`✅ Server ready at http://${config.host}:${config.port}`);
 };
 
 // Run startup checks
@@ -115,6 +115,6 @@ startupCheck().catch((error) => {
 
 export default {
   port: config.port,
-  host: config.host,
+  hostname: config.host,
   fetch: app.fetch,
 };
