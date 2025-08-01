@@ -2,6 +2,7 @@ import { container } from "../di/container";
 import { TYPES } from "../di/types";
 import { redisManager } from "../config/redis";
 import type { IDatabase } from "../interfaces/IDatabase";
+import { formatUptime } from "./formatters";
 
 export interface HealthStatus {
   status: "healthy" | "unhealthy" | "degraded";
@@ -19,7 +20,7 @@ export interface HealthStatus {
     };
   };
   version: string;
-  uptime: number;
+  uptime: string;
 }
 
 export class HealthChecker {
@@ -168,7 +169,7 @@ export class HealthChecker {
         redisHealth.responseTime
       }ms)`
     );
-    console.log(`   Uptime: ${Math.floor(process.uptime())}s`);
+    console.log(`   Uptime: ${formatUptime(process.uptime())}`);
 
     return {
       status: overallStatus,
@@ -178,7 +179,7 @@ export class HealthChecker {
         redis: redisHealth,
       },
       version: "2.0.0",
-      uptime: process.uptime(),
+      uptime: formatUptime(process.uptime()),
     };
   }
 

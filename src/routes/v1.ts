@@ -4,6 +4,7 @@ import { userRoute } from "./userRoute";
 import { postRoute } from "./postRoute";
 import { ApiResponse } from "../utils/response";
 import { HealthChecker } from "../utils/healthChecker";
+import { formatUptime } from "../utils/formatters";
 
 const v1 = new Hono().basePath("/v1");
 
@@ -22,8 +23,8 @@ v1.get("/health", async (c) => {
       healthStatus.status === "healthy"
         ? 200
         : healthStatus.status === "degraded"
-        ? 200 // Still functional
-        : 503; // Unhealthy - service unavailable
+        ? 200
+        : 503;
 
     const message =
       healthStatus.status === "healthy"
@@ -44,8 +45,8 @@ v1.get("/health", async (c) => {
         database: { status: "unknown", error: "Health check failed" },
         redis: { status: "unknown", error: "Health check failed" },
       },
-      version: "2.0.0",
-      uptime: process.uptime(),
+      version: "1.0.0",
+      uptime: formatUptime(process.uptime()),
       error: error instanceof Error ? error.message : "Unknown error",
     };
 

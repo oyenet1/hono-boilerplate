@@ -65,7 +65,7 @@ class RedisManager {
 
   private setupEventHandlers(): void {
     this.client.on("connect", () => {
-      console.log("Redis connected successfully");
+      console.log("Redis event handlers is ready");
       this.isConnected = true;
     });
 

@@ -5,6 +5,7 @@ import { postRoute } from "./postRoute";
 import { rateLimits } from "../middleware/security";
 import { ApiResponse } from "../utils/response";
 import { HealthChecker } from "../utils/healthChecker";
+import { formatUptime } from "../utils/formatters";
 
 const routes = new Hono();
 
@@ -46,7 +47,7 @@ routes.get("/health", async (c) => {
         redis: { status: "unknown", error: "Health check failed" },
       },
       version: "2.0.0",
-      uptime: process.uptime(),
+      uptime: formatUptime(process.uptime()),
       error: error instanceof Error ? error.message : "Unknown error",
     };
 
