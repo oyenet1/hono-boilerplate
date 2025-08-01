@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { container } from "../di/container";
-import { TYPES } from "../di/types";
 import { AuthController } from "../controllers/AuthController";
 import { rateLimits } from "../middleware/security";
 import { validateJson, zValidator } from "../utils/zValidator";
@@ -13,7 +12,7 @@ import {
 import { secureAuthMiddleware } from "../middleware/security";
 
 const authRoute = new Hono();
-const authController = container.get<AuthController>(TYPES.AuthController);
+const authController = container.get(AuthController);
 
 // Apply strict rate limiting to all auth routes
 authRoute.use("*", rateLimits.auth);

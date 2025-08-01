@@ -1,7 +1,6 @@
 import { container } from "../di/container";
-import { TYPES } from "../di/types";
 import { redisManager } from "../config/redis";
-import type { IDatabase } from "../interfaces/IDatabase";
+import { DrizzleDatabase } from "../database/DrizzleDatabase";
 import { formatUptime } from "./formatters";
 
 export interface HealthStatus {
@@ -36,12 +35,12 @@ export class HealthChecker {
     console.log("🔍 Health Check: Testing database connection...");
 
     try {
-      const database = container.get<IDatabase>(TYPES.Database);
+      const database = container.get(DrizzleDatabase);
 
       // Try a simple query to test connection
       // For Drizzle: Try to fetch one user or do a basic query
       // For SimpleDatabase: Try a simple operation
-      await database.getAllUsers(1, 1); // Get 1 user, limit 1
+      await database.getAllUsers({ page: 1, limit: 1 }); // Get 1 user, limit 1
 
       const responseTime = Date.now() - startTime;
       console.log(`✅ Database: Connection successful (${responseTime}ms)`);

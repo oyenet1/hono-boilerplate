@@ -1,7 +1,6 @@
 import { inject, injectable } from "inversify";
 import { Context } from "hono";
-import type { IUserService } from "../interfaces/IUserService";
-import { TYPES } from "../di/types";
+import { UserService } from "../services/UserService";
 import { ApiResponse } from "../utils/response";
 import { UserResource } from "../resources/UserResource";
 import { SortField } from "../interfaces/IDatabase";
@@ -10,7 +9,7 @@ import { SortField } from "../interfaces/IDatabase";
 export class UserController {
   private userResource = new UserResource();
 
-  constructor(@inject(TYPES.UserService) private userService: IUserService) {}
+  constructor(@inject(UserService) private userService: UserService) {}
 
   async getUsers(c: Context) {
     try {

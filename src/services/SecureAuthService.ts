@@ -2,9 +2,8 @@ import { randomUUID } from "crypto";
 import { inject, injectable } from "inversify";
 import { hash, compare } from "bcryptjs";
 import { sign, verify } from "hono/jwt";
-import type { IAuthService, UserSession } from "../interfaces/IAuthService";
-import type { IUserService } from "../interfaces/IUserService";
-import { TYPES } from "../di/types";
+import type { UserSession } from "../interfaces/IAuthService";
+import { UserService } from "./UserService";
 import { CreateUserDto, LoginDto } from "../dtos";
 import { appConfig } from "../config/app";
 import { redisManager } from "../config/redis";
@@ -27,8 +26,8 @@ interface LoginAttempt {
 }
 
 @injectable()
-export class SecureAuthService implements IAuthService {
-  constructor(@inject(TYPES.UserService) private userService: IUserService) {}
+export class SecureAuthService {
+  constructor(@inject(UserService) private userService: UserService) {}
 
   async register(userData: CreateUserDto, ipAddress?: string) {
     // Check if email already exists

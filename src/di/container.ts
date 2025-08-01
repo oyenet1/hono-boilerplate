@@ -1,19 +1,12 @@
 import "reflect-metadata";
 import { Container } from "inversify";
-import { TYPES } from "./types";
 
-// Interfaces
-import type { IDatabase } from "../interfaces/IDatabase";
-import type { IUserService } from "../interfaces/IUserService";
-import type { IAuthService } from "../interfaces/IAuthService";
-import type { IPostService } from "../interfaces/IPostService";
-
-// Implementations
+// Import services and controllers
 import { DrizzleDatabase } from "../database/DrizzleDatabase";
+import { CacheService } from "../services/CacheService";
 import { UserService } from "../services/UserService";
 import { SecureAuthService } from "../services/SecureAuthService";
 import { PostService } from "../services/PostService";
-import { CacheService } from "../services/CacheService";
 import { UserController } from "../controllers/UserController";
 import { AuthController } from "../controllers/AuthController";
 import { PostController } from "../controllers/PostController";
@@ -21,20 +14,17 @@ import { PostController } from "../controllers/PostController";
 const container = new Container();
 
 // Database
-container
-  .bind<IDatabase>(TYPES.Database)
-  .to(DrizzleDatabase)
-  .inSingletonScope();
+container.bind(DrizzleDatabase).toSelf().inSingletonScope();
 
 // Services
-container.bind<CacheService>(CacheService).toSelf().inSingletonScope();
-container.bind<IUserService>(TYPES.UserService).to(UserService);
-container.bind<IAuthService>(TYPES.AuthService).to(SecureAuthService);
-container.bind<IPostService>(TYPES.PostService).to(PostService);
+container.bind(CacheService).toSelf().inSingletonScope();
+container.bind(UserService).toSelf();
+container.bind(SecureAuthService).toSelf();
+container.bind(PostService).toSelf();
 
 // Controllers
-container.bind<UserController>(TYPES.UserController).to(UserController);
-container.bind<AuthController>(TYPES.AuthController).to(AuthController);
-container.bind<PostController>(TYPES.PostController).to(PostController);
+container.bind(UserController).toSelf();
+container.bind(AuthController).toSelf();
+container.bind(PostController).toSelf();
 
 export { container };

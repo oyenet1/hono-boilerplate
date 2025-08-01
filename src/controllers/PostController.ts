@@ -1,7 +1,6 @@
 import { inject, injectable } from "inversify";
 import { Context } from "hono";
-import type { IPostService } from "../interfaces/IPostService";
-import { TYPES } from "../di/types";
+import { PostService } from "../services/PostService";
 import { ApiResponse } from "../utils/response";
 import { PostResource } from "../resources/PostResource";
 import { SortField } from "../interfaces/IDatabase";
@@ -10,7 +9,7 @@ import { SortField } from "../interfaces/IDatabase";
 export class PostController {
   private postResource = new PostResource();
 
-  constructor(@inject(TYPES.PostService) private postService: IPostService) {}
+  constructor(@inject(PostService) private postService: PostService) {}
 
   async getPosts(c: Context) {
     try {

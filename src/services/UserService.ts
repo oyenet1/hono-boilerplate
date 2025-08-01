@@ -1,18 +1,17 @@
 import { inject, injectable } from "inversify";
-import type { IUserService } from "../interfaces/IUserService";
-import type { IDatabase, User, QueryOptions } from "../interfaces/IDatabase";
-import { TYPES } from "../di/types";
+import type { User, QueryOptions } from "../interfaces/IDatabase";
+import { DrizzleDatabase } from "../database/DrizzleDatabase";
 import { CreateUserDto, UpdateUserDto } from "../dtos";
 import { CacheService } from "./CacheService";
 import { UserResource, UserResourceData } from "../resources/UserResource";
 import { ResourceCollection } from "../resources/BaseResource";
 
 @injectable()
-export class UserService implements IUserService {
+export class UserService {
   private userResource = new UserResource();
 
   constructor(
-    @inject(TYPES.Database) private database: IDatabase,
+    @inject(DrizzleDatabase) private database: DrizzleDatabase,
     @inject(CacheService) private cacheService: CacheService
   ) {}
 

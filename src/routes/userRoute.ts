@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { container } from "../di/container";
-import { TYPES } from "../di/types";
 import { UserController } from "../controllers/UserController";
 import { secureAuthMiddleware, rateLimits } from "../middleware/security";
 import {
@@ -12,7 +11,7 @@ import { UpdateUserDto, PaginationDto } from "../dtos";
 import { z } from "zod";
 
 const userRoute = new Hono();
-const userController = container.get<UserController>(TYPES.UserController);
+const userController = container.get(UserController);
 
 // Parameter validation schema
 const UserIdSchema = z.object({

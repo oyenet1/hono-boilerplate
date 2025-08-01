@@ -15,14 +15,7 @@ export class CacheService {
       const cached = await redisManager.get(key);
       if (!cached) return null;
 
-      const parsed = await parseAsync(cached);
-
-      // Transform date strings back to Date objects for User and Post objects
-      if (parsed && typeof parsed === "object") {
-        this.restoreDateFields(parsed);
-      }
-
-      return parsed;
+      return await parseAsync(cached);
     } catch (error) {
       console.error(`Error retrieving cache for key ${key}:`, error);
       return null;
@@ -92,6 +85,8 @@ export class CacheService {
     const cached = await this.get<T>(key);
     if (cached !== null) {
       console.log(`🎯 Cache HIT for key: ${key}`);
+      // Restore Date objects in cached data
+      this.restoreDateFields(cached);
       return cached;
     }
 
@@ -114,9 +109,7 @@ export class CacheService {
       console.log(`🚫 Not caching error for key: ${key}`, error);
       throw error; // Re-throw the error without caching it
     }
-  }
-
-  // Invalidate ALL caches (for create, update, delete operations)
+  } // Invalidate ALL caches (for create, update, delete operations)
   async invalidateAllCaches(): Promise<void> {
     try {
       console.log("🧹 Invalidating ALL caches...");

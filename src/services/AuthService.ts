@@ -1,16 +1,15 @@
 import { inject, injectable } from "inversify";
 import { hash, compare } from "bcryptjs";
 import { sign, verify } from "hono/jwt";
-import type { IAuthService, UserSession } from "../interfaces/IAuthService";
-import type { IUserService } from "../interfaces/IUserService";
-import { TYPES } from "../di/types";
+import type { UserSession } from "../interfaces/IAuthService";
+import { UserService } from "./UserService";
 import { CreateUserDto, LoginDto } from "../dtos";
 import { appConfig } from "../config/app";
 import { createId } from "@paralleldrive/cuid2";
 
 @injectable()
-export class AuthService implements IAuthService {
-  constructor(@inject(TYPES.UserService) private userService: IUserService) {}
+export class AuthService {
+  constructor(@inject(UserService) private userService: UserService) {}
 
   // Since sessions are not persisted in this basic implementation,
   // we return empty arrays or throw errors for session management methods.

@@ -3,7 +3,6 @@ import { HTTPException } from "hono/http-exception";
 import { appConfig } from "../config/app";
 import { redisManager } from "../config/redis";
 import { container } from "../di/container";
-import { TYPES } from "../di/types";
 import { SecureAuthService } from "../services/SecureAuthService";
 import { TokenExtractor } from "../utils/tokenExtractor";
 import { ApiResponse } from "../utils/response";
@@ -26,7 +25,7 @@ export const secureAuthMiddleware = async (c: Context, next: Next) => {
   }
 
   try {
-    const authService = container.get<SecureAuthService>(TYPES.AuthService);
+    const authService = container.get(SecureAuthService);
     const sessionData = await authService.verifySession(token);
 
     if (!sessionData) {

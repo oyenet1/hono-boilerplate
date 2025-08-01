@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { container } from "../di/container";
-import { TYPES } from "../di/types";
 import { PostController } from "../controllers/PostController";
 import { secureAuthMiddleware, rateLimits } from "../middleware/security";
 import {
@@ -12,7 +11,7 @@ import { CreatePostDto, UpdatePostDto, PaginationDto } from "../dtos";
 import { z } from "zod";
 
 const postRoute = new Hono();
-const postController = container.get<PostController>(TYPES.PostController);
+const postController = container.get(PostController);
 
 // Parameter validation schema
 const PostIdSchema = z.object({

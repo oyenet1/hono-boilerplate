@@ -1,13 +1,14 @@
 import { inject, injectable } from "inversify";
 import { Context } from "hono";
-import type { IAuthService } from "../interfaces/IAuthService";
-import { TYPES } from "../di/types";
+import { SecureAuthService } from "../services/SecureAuthService";
 import { ApiResponse } from "../utils/response";
 import { TokenExtractor } from "../utils/tokenExtractor";
 
 @injectable()
 export class AuthController {
-  constructor(@inject(TYPES.AuthService) private authService: IAuthService) {}
+  constructor(
+    @inject(SecureAuthService) private authService: SecureAuthService
+  ) {}
 
   async register(c: Context) {
     try {

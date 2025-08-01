@@ -1,18 +1,17 @@
 import { inject, injectable } from "inversify";
-import type { IPostService } from "../interfaces/IPostService";
-import type { IDatabase, Post, QueryOptions } from "../interfaces/IDatabase";
-import { TYPES } from "../di/types";
+import type { Post, QueryOptions } from "../interfaces/IDatabase";
+import { DrizzleDatabase } from "../database/DrizzleDatabase";
 import { CreatePostDto, UpdatePostDto } from "../dtos";
 import { CacheService } from "./CacheService";
 import { PostResource, PostResourceData } from "../resources/PostResource";
 import { ResourceCollection } from "../resources/BaseResource";
 
 @injectable()
-export class PostService implements IPostService {
+export class PostService {
   private postResource = new PostResource();
 
   constructor(
-    @inject(TYPES.Database) private database: IDatabase,
+    @inject(DrizzleDatabase) private database: DrizzleDatabase,
     @inject(CacheService) private cacheService: CacheService
   ) {}
 
