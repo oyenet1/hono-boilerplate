@@ -10,6 +10,8 @@ import { errorHandler } from "./utils/errorHandlers";
 import { v1 } from "./routes/v1";
 import { redisManager } from "./config/redis";
 import { ApiResponse } from "./utils/response";
+import { appWorker } from "./jobs/app-worker";
+import { closeAppQueue } from "./jobs/app-queue";
 
 const app = new Hono();
 
@@ -34,6 +36,8 @@ app.get("/", (c) => {
       "Drizzle ORM",
       "CUID2 IDs",
       "Dependency Injection",
+      "BullMQ App Queue",
+      "Integrated Worker",
     ],
     documentation: "/api/health",
     timestamp: new Date().toISOString(),
@@ -58,8 +62,18 @@ app.notFound((c) => {
 const gracefulShutdown = async () => {
   console.log("Shutting down gracefully...");
   try {
+    // Close the app worker
+    console.log("Closing app worker...");
+    await appWorker.close();
+
+    // Close the app queue
+    console.log("Closing app queue...");
+    await closeAppQueue();
+
+    // Disconnect Redis
+    console.log("Disconnecting Redis...");
     await redisManager.disconnect();
-    console.log("Redis disconnected");
+    console.log("✅ Graceful shutdown completed");
     process.exit(0);
   } catch (error) {
     console.error("Error during shutdown:", error);
@@ -100,6 +114,18 @@ const startupCheck = async () => {
   } catch (error) {
     console.log(
       `🗄️  Database connection: error - ${
+        error instanceof Error ? error.message : "unknown"
+      }`
+    );
+  }
+
+  // Initialize app worker
+  try {
+    console.log(`🔧 App worker initialized`);
+    console.log(`📤 Queue system ready for all app operations`);
+  } catch (error) {
+    console.log(
+      `🔧 App worker error - ${
         error instanceof Error ? error.message : "unknown"
       }`
     );

@@ -2,11 +2,12 @@ import { Hono } from "hono";
 import { authRoute } from "./authRoute";
 import { userRoute } from "./userRoute";
 import { postRoute } from "./postRoute";
+import { monitoringRoute } from "./monitoringRoute";
 import { ApiResponse } from "../utils/response";
 import { HealthChecker } from "../utils/healthChecker";
 import { formatUptime } from "../utils/formatters";
 import { container } from "../di/container";
-import { CacheService } from "../services/CacheService";
+import { UniversalCacheService } from "../services/UniversalCacheService";
 import { secureAuthMiddleware } from "../middleware/security";
 
 const v1 = new Hono().basePath("/v1");
@@ -15,6 +16,7 @@ const v1 = new Hono().basePath("/v1");
 v1.route("/auth", authRoute);
 v1.route("/users", userRoute);
 v1.route("/posts", postRoute);
+v1.route("/monitoring", monitoringRoute);
 
 // Health check endpoint - NO rate limiting for infrastructure monitoring
 v1.get("/health", async (c) => {
@@ -71,7 +73,7 @@ v1.get("/ping", async (c) => {
 // Cache management endpoints (protected)
 v1.delete("/cache", async (c) => {
   try {
-    const cacheService = container.get(CacheService);
+    const cacheService = container.get(UniversalCacheService);
     await cacheService.invalidateAllCaches();
 
     return ApiResponse.success(c, null, "All caches invalidated successfully");
@@ -83,8 +85,8 @@ v1.delete("/cache", async (c) => {
 
 v1.delete("/cache/users", secureAuthMiddleware, async (c) => {
   try {
-    const cacheService = container.get(CacheService);
-    await cacheService.invalidateUserCache();
+    const cacheService = container.get(UniversalCacheService);
+    await cacheService.invalidateAllUserCaches();
 
     return ApiResponse.success(c, null, "User caches invalidated successfully");
   } catch (error) {
@@ -95,7 +97,7 @@ v1.delete("/cache/users", secureAuthMiddleware, async (c) => {
 
 v1.delete("/cache/posts", secureAuthMiddleware, async (c) => {
   try {
-    const cacheService = container.get(CacheService);
+    const cacheService = container.get(UniversalCacheService);
     await cacheService.invalidatePostCache();
 
     return ApiResponse.success(c, null, "Post caches invalidated successfully");
@@ -108,8 +110,8 @@ v1.delete("/cache/posts", secureAuthMiddleware, async (c) => {
 v1.delete("/cache/users/:id", secureAuthMiddleware, async (c) => {
   try {
     const userId = c.req.param("id");
-    const cacheService = container.get(CacheService);
-    await cacheService.invalidateUserCache(userId);
+    const cacheService = container.get(UniversalCacheService);
+    await cacheService.invalidateAllUserCaches(userId);
 
     return ApiResponse.success(
       c,

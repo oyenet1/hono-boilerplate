@@ -2,7 +2,7 @@ import { inject, injectable } from "inversify";
 import type { Post, QueryOptions } from "../interfaces/IDatabase";
 import { DrizzleDatabase } from "../database/DrizzleDatabase";
 import { CreatePostDto, UpdatePostDto } from "../dtos";
-import { CacheService } from "./CacheService";
+import { UniversalCacheService } from "./UniversalCacheService";
 import { PostResource, PostResourceData } from "../resources/PostResource";
 import { ResourceCollection } from "../resources/BaseResource";
 
@@ -12,7 +12,7 @@ export class PostService {
 
   constructor(
     @inject(DrizzleDatabase) private database: DrizzleDatabase,
-    @inject(CacheService) private cacheService: CacheService
+    @inject(UniversalCacheService) private cacheService: UniversalCacheService
   ) {}
 
   async createPost(postData: CreatePostDto, userId: string): Promise<Post> {

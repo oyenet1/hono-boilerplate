@@ -10,111 +10,109 @@ npm install @nuxtjs/axios @pinia/nuxt
 
 ```typescript
 export default defineNuxtConfig({
-  modules: [
-    '@pinia/nuxt'
-  ],
+  modules: ["@pinia/nuxt"],
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE_URL || 'http://localhost:3002/v1'
-    }
+      apiBase: process.env.API_BASE_URL || "http://localhost:3002/v1",
+    },
   },
   ssr: false, // For SPA mode, adjust based on your needs
-})
+});
 ```
 
 ## 2. API Plugin (`plugins/api.client.ts`)
 
 ```typescript
 export default defineNuxtPlugin(() => {
-  const config = useRuntimeConfig()
-  
+  const config = useRuntimeConfig();
+
   const $api = $fetch.create({
     baseURL: config.public.apiBase,
     onRequest({ request, options }) {
       // Add auth token to requests
-      const token = useCookie('auth-token').value
+      const token = useCookie("auth-token").value;
       if (token) {
         options.headers = {
           ...options.headers,
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        };
       }
     },
     onResponseError({ response }) {
       // Handle auth errors globally
       if (response.status === 401 || response.status === 419) {
         // Session expired
-        const authStore = useAuthStore()
-        authStore.logout()
-        navigateTo('/login')
+        const authStore = useAuthStore();
+        authStore.logout();
+        navigateTo("/login");
       }
-    }
-  })
+    },
+  });
 
   return {
     provide: {
-      api: $api
-    }
-  }
-})
+      api: $api,
+    },
+  };
+});
 ```
 
 ## 3. Auth Store (`stores/auth.ts`)
 
 ```typescript
-import { defineStore } from 'pinia'
+import { defineStore } from "pinia";
 
 interface User {
-  id: string
-  name: string
-  email: string
-  createdAt: string
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
 }
 
 interface UserSession {
-  sessionId: string
-  userId: string
-  email: string
-  loginTime: number
-  lastActivity: number
-  ipAddress?: string
-  userAgent?: string
-  isCurrent?: boolean
+  sessionId: string;
+  userId: string;
+  email: string;
+  loginTime: number;
+  lastActivity: number;
+  ipAddress?: string;
+  userAgent?: string;
+  isCurrent?: boolean;
 }
 
 interface AuthState {
-  user: User | null
-  token: string | null
-  isAuthenticated: boolean
-  sessions: UserSession[]
-  currentSession: UserSession | null
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  sessions: UserSession[];
+  currentSession: UserSession | null;
 }
 
-export const useAuthStore = defineStore('auth', {
+export const useAuthStore = defineStore("auth", {
   state: (): AuthState => ({
     user: null,
     token: null,
     isAuthenticated: false,
     sessions: [],
-    currentSession: null
+    currentSession: null,
   }),
 
   actions: {
     // Initialize auth state from cookies
     async initAuth() {
-      const token = useCookie('auth-token').value
-      const user = useCookie('auth-user').value
+      const token = useCookie("auth-token").value;
+      const user = useCookie("auth-user").value;
 
       if (token && user) {
-        this.token = token
-        this.user = typeof user === 'string' ? JSON.parse(user) : user
-        this.isAuthenticated = true
-        
+        this.token = token;
+        this.user = typeof user === "string" ? JSON.parse(user) : user;
+        this.isAuthenticated = true;
+
         // Verify token is still valid
         try {
-          await this.fetchProfile()
+          await this.fetchProfile();
         } catch (error) {
-          this.logout()
+          this.logout();
         }
       }
     },
@@ -122,231 +120,235 @@ export const useAuthStore = defineStore('auth', {
     // Login
     async login(email: string, password: string) {
       try {
-        const { $api } = useNuxtApp()
-        const response = await $api('/auth/login', {
-          method: 'POST',
-          body: { email, password }
-        })
+        const { $api } = useNuxtApp();
+        const response = await $api("/auth/login", {
+          method: "POST",
+          body: { email, password },
+        });
 
         if (response.success) {
-          const { user, token, sessionId } = response.data
-          
+          const { user, token, sessionId } = response.data;
+
           // Store in state
-          this.user = user
-          this.token = token
-          this.isAuthenticated = true
-          
+          this.user = user;
+          this.token = token;
+          this.isAuthenticated = true;
+
           // Store in cookies (secure, httpOnly in production)
-          const tokenCookie = useCookie('auth-token', {
+          const tokenCookie = useCookie("auth-token", {
             maxAge: 60 * 60 * 24 * 7, // 7 days
             secure: true,
-            sameSite: 'strict'
-          })
-          const userCookie = useCookie('auth-user', {
+            sameSite: "strict",
+          });
+          const userCookie = useCookie("auth-user", {
             maxAge: 60 * 60 * 24 * 7,
             secure: true,
-            sameSite: 'strict'
-          })
-          
-          tokenCookie.value = token
-          userCookie.value = JSON.stringify(user)
-          
-          return { success: true, user }
+            sameSite: "strict",
+          });
+
+          tokenCookie.value = token;
+          userCookie.value = JSON.stringify(user);
+
+          return { success: true, user };
         }
       } catch (error: any) {
-        throw new Error(error.data?.message || 'Login failed')
+        throw new Error(error.data?.message || "Login failed");
       }
     },
 
     // Register
-    async register(userData: { name: string; email: string; password: string }) {
+    async register(userData: {
+      name: string;
+      email: string;
+      password: string;
+    }) {
       try {
-        const { $api } = useNuxtApp()
-        const response = await $api('/auth/register', {
-          method: 'POST',
-          body: userData
-        })
+        const { $api } = useNuxtApp();
+        const response = await $api("/auth/register", {
+          method: "POST",
+          body: userData,
+        });
 
         if (response.success) {
-          const { user, token } = response.data
-          
-          this.user = user
-          this.token = token
-          this.isAuthenticated = true
-          
-          const tokenCookie = useCookie('auth-token', {
+          const { user, token } = response.data;
+
+          this.user = user;
+          this.token = token;
+          this.isAuthenticated = true;
+
+          const tokenCookie = useCookie("auth-token", {
             maxAge: 60 * 60 * 24 * 7,
             secure: true,
-            sameSite: 'strict'
-          })
-          const userCookie = useCookie('auth-user', {
+            sameSite: "strict",
+          });
+          const userCookie = useCookie("auth-user", {
             maxAge: 60 * 60 * 24 * 7,
             secure: true,
-            sameSite: 'strict'
-          })
-          
-          tokenCookie.value = token
-          userCookie.value = JSON.stringify(user)
-          
-          return { success: true, user }
+            sameSite: "strict",
+          });
+
+          tokenCookie.value = token;
+          userCookie.value = JSON.stringify(user);
+
+          return { success: true, user };
         }
       } catch (error: any) {
-        throw new Error(error.data?.message || 'Registration failed')
+        throw new Error(error.data?.message || "Registration failed");
       }
     },
 
     // Logout
     async logout() {
       try {
-        const { $api } = useNuxtApp()
-        await $api('/auth/logout', { method: 'POST' })
+        const { $api } = useNuxtApp();
+        await $api("/auth/logout", { method: "POST" });
       } catch (error) {
         // Continue with logout even if API call fails
-        console.warn('Logout API call failed:', error)
+        console.warn("Logout API call failed:", error);
       } finally {
         // Clear state
-        this.user = null
-        this.token = null
-        this.isAuthenticated = false
-        this.sessions = []
-        this.currentSession = null
-        
+        this.user = null;
+        this.token = null;
+        this.isAuthenticated = false;
+        this.sessions = [];
+        this.currentSession = null;
+
         // Clear cookies
-        const tokenCookie = useCookie('auth-token')
-        const userCookie = useCookie('auth-user')
-        tokenCookie.value = null
-        userCookie.value = null
-        
+        const tokenCookie = useCookie("auth-token");
+        const userCookie = useCookie("auth-user");
+        tokenCookie.value = null;
+        userCookie.value = null;
+
         // Redirect to login
-        await navigateTo('/login')
+        await navigateTo("/login");
       }
     },
 
     // Fetch user profile
     async fetchProfile() {
-      const { $api } = useNuxtApp()
-      const response = await $api('/auth/profile')
-      
+      const { $api } = useNuxtApp();
+      const response = await $api("/auth/profile");
+
       if (response.success) {
-        this.user = response.data
-        return response.data
+        this.user = response.data;
+        return response.data;
       }
     },
 
     // Get all user sessions
     async fetchSessions() {
-      const { $api } = useNuxtApp()
-      const response = await $api('/auth/sessions')
-      
+      const { $api } = useNuxtApp();
+      const response = await $api("/auth/sessions");
+
       if (response.success) {
-        this.sessions = response.data.sessions
-        return response.data.sessions
+        this.sessions = response.data.sessions;
+        return response.data.sessions;
       }
     },
 
     // Get current session
     async fetchCurrentSession() {
-      const { $api } = useNuxtApp()
-      const response = await $api('/auth/sessions/current')
-      
+      const { $api } = useNuxtApp();
+      const response = await $api("/auth/sessions/current");
+
       if (response.success) {
-        this.currentSession = response.data.session
-        return response.data.session
+        this.currentSession = response.data.session;
+        return response.data.session;
       }
     },
 
     // Revoke specific session
     async revokeSession(sessionId: string) {
-      const { $api } = useNuxtApp()
-      const response = await $api('/auth/sessions/revoke', {
-        method: 'DELETE',
-        body: { sessionId }
-      })
-      
+      const { $api } = useNuxtApp();
+      const response = await $api("/auth/sessions/revoke", {
+        method: "DELETE",
+        body: { sessionId },
+      });
+
       if (response.success) {
         // Remove from sessions array
-        this.sessions = this.sessions.filter(s => s.sessionId !== sessionId)
-        return true
+        this.sessions = this.sessions.filter((s) => s.sessionId !== sessionId);
+        return true;
       }
-      return false
+      return false;
     },
 
     // Revoke all other sessions
     async revokeAllOtherSessions() {
-      const { $api } = useNuxtApp()
-      const response = await $api('/auth/sessions/revoke-others', {
-        method: 'DELETE'
-      })
-      
+      const { $api } = useNuxtApp();
+      const response = await $api("/auth/sessions/revoke-others", {
+        method: "DELETE",
+      });
+
       if (response.success) {
         // Keep only current session
-        this.sessions = this.sessions.filter(s => s.isCurrent)
-        return response.data.revokedCount
+        this.sessions = this.sessions.filter((s) => s.isCurrent);
+        return response.data.revokedCount;
       }
-      return 0
+      return 0;
     },
 
     // Refresh session token
     async refreshToken() {
       try {
-        const { $api } = useNuxtApp()
-        const response = await $api('/auth/refresh', {
-          method: 'POST',
-          body: { sessionId: this.currentSession?.sessionId }
-        })
-        
+        const { $api } = useNuxtApp();
+        const response = await $api("/auth/refresh", {
+          method: "POST",
+          body: { sessionId: this.currentSession?.sessionId },
+        });
+
         if (response.success) {
-          this.token = response.data.token
-          const tokenCookie = useCookie('auth-token')
-          tokenCookie.value = response.data.token
-          return true
+          this.token = response.data.token;
+          const tokenCookie = useCookie("auth-token");
+          tokenCookie.value = response.data.token;
+          return true;
         }
       } catch (error) {
-        console.error('Token refresh failed:', error)
-        this.logout()
-        return false
+        console.error("Token refresh failed:", error);
+        this.logout();
+        return false;
       }
-    }
-  }
-})
+    },
+  },
+});
 ```
 
 ## 4. Auth Middleware (`middleware/auth.ts`)
 
 ```typescript
 export default defineNuxtRouteMiddleware((to) => {
-  const authStore = useAuthStore()
-  
+  const authStore = useAuthStore();
+
   if (!authStore.isAuthenticated) {
-    return navigateTo('/login')
+    return navigateTo("/login");
   }
-})
+});
 ```
 
 ## 5. Guest Middleware (`middleware/guest.ts`)
 
 ```typescript
 export default defineNuxtRouteMiddleware((to) => {
-  const authStore = useAuthStore()
-  
+  const authStore = useAuthStore();
+
   if (authStore.isAuthenticated) {
-    return navigateTo('/dashboard')
+    return navigateTo("/dashboard");
   }
-})
+});
 ```
 
 ## 6. Auth Composable (`composables/useAuth.ts`)
 
 ```typescript
 export const useAuth = () => {
-  const authStore = useAuthStore()
-  
+  const authStore = useAuthStore();
+
   return {
     user: computed(() => authStore.user),
     isAuthenticated: computed(() => authStore.isAuthenticated),
     sessions: computed(() => authStore.sessions),
     currentSession: computed(() => authStore.currentSession),
-    
+
     login: authStore.login,
     register: authStore.register,
     logout: authStore.logout,
@@ -355,9 +357,9 @@ export const useAuth = () => {
     fetchCurrentSession: authStore.fetchCurrentSession,
     revokeSession: authStore.revokeSession,
     revokeAllOtherSessions: authStore.revokeAllOtherSessions,
-    refreshToken: authStore.refreshToken
-  }
-}
+    refreshToken: authStore.refreshToken,
+  };
+};
 ```
 
 ## 7. Root App Setup (`app.vue`)
@@ -370,12 +372,12 @@ export const useAuth = () => {
 </template>
 
 <script setup>
-const authStore = useAuthStore()
+const authStore = useAuthStore();
 
 // Initialize auth state on app load
 onMounted(async () => {
-  await authStore.initAuth()
-})
+  await authStore.initAuth();
+});
 </script>
 ```
 
@@ -390,7 +392,7 @@ onMounted(async () => {
           Sign in to your account
         </h2>
       </div>
-      
+
       <form @submit.prevent="handleLogin" class="mt-8 space-y-6">
         <div>
           <label for="email" class="sr-only">Email address</label>
@@ -404,7 +406,7 @@ onMounted(async () => {
             placeholder="Email address"
           />
         </div>
-        
+
         <div>
           <label for="password" class="sr-only">Password</label>
           <input
@@ -428,7 +430,7 @@ onMounted(async () => {
             :disabled="loading"
             class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
           >
-            {{ loading ? 'Signing in...' : 'Sign in' }}
+            {{ loading ? "Signing in..." : "Sign in" }}
           </button>
         </div>
       </form>
@@ -454,7 +456,7 @@ const error = ref('')
 const handleLogin = async () => {
   loading.value = true
   error.value = ''
-  
+
   try {
     await login(form.email, form.password)
     await navigateTo('/dashboard')
@@ -473,7 +475,7 @@ const handleLogin = async () => {
 <template>
   <div class="max-w-4xl mx-auto py-8">
     <h1 class="text-2xl font-bold mb-6">Active Sessions</h1>
-    
+
     <div class="space-y-4">
       <div
         v-for="session in sessions"
@@ -483,13 +485,13 @@ const handleLogin = async () => {
       >
         <div>
           <div class="font-medium">
-            {{ session.userAgent || 'Unknown Device' }}
+            {{ session.userAgent || "Unknown Device" }}
             <span v-if="session.isCurrent" class="text-blue-600 text-sm">
               (Current Session)
             </span>
           </div>
           <div class="text-sm text-gray-600">
-            IP: {{ session.ipAddress || 'Unknown' }}
+            IP: {{ session.ipAddress || "Unknown" }}
           </div>
           <div class="text-sm text-gray-600">
             Login: {{ formatDate(session.loginTime) }}
@@ -498,7 +500,7 @@ const handleLogin = async () => {
             Last Activity: {{ formatDate(session.lastActivity) }}
           </div>
         </div>
-        
+
         <div class="space-x-2">
           <button
             v-if="!session.isCurrent"
@@ -510,7 +512,7 @@ const handleLogin = async () => {
         </div>
       </div>
     </div>
-    
+
     <div class="mt-6">
       <button
         @click="revokeAllOthers"
@@ -524,37 +526,37 @@ const handleLogin = async () => {
 
 <script setup>
 definePageMeta({
-  middleware: 'auth'
-})
+  middleware: "auth",
+});
 
-const { 
-  sessions, 
-  fetchSessions, 
-  revokeSession: revokeSessionStore, 
-  revokeAllOtherSessions 
-} = useAuth()
+const {
+  sessions,
+  fetchSessions,
+  revokeSession: revokeSessionStore,
+  revokeAllOtherSessions,
+} = useAuth();
 
 // Fetch sessions on page load
 onMounted(() => {
-  fetchSessions()
-})
+  fetchSessions();
+});
 
 const formatDate = (timestamp: number) => {
-  return new Date(timestamp).toLocaleString()
-}
+  return new Date(timestamp).toLocaleString();
+};
 
 const revokeSession = async (sessionId: string) => {
-  if (confirm('Are you sure you want to revoke this session?')) {
-    await revokeSessionStore(sessionId)
+  if (confirm("Are you sure you want to revoke this session?")) {
+    await revokeSessionStore(sessionId);
   }
-}
+};
 
 const revokeAllOthers = async () => {
-  if (confirm('Are you sure you want to revoke all other sessions?')) {
-    const count = await revokeAllOtherSessions()
-    alert(`Revoked ${count} sessions`)
+  if (confirm("Are you sure you want to revoke all other sessions?")) {
+    const count = await revokeAllOtherSessions();
+    alert(`Revoked ${count} sessions`);
   }
-}
+};
 </script>
 ```
 
@@ -563,34 +565,36 @@ const revokeAllOthers = async () => {
 ```typescript
 // Auto-refresh token before expiration
 export const useTokenRefresh = () => {
-  const { refreshToken, isAuthenticated } = useAuth()
-  
+  const { refreshToken, isAuthenticated } = useAuth();
+
   onMounted(() => {
     if (isAuthenticated.value) {
       // Refresh token every 25 minutes (assuming 30min expiry)
       setInterval(async () => {
-        await refreshToken()
-      }, 25 * 60 * 1000)
+        await refreshToken();
+      }, 25 * 60 * 1000);
     }
-  })
-}
+  });
+};
 ```
 
 ## Usage Examples
 
 ### Protected Route
+
 ```vue
 <script setup>
 definePageMeta({
-  middleware: 'auth'
-})
+  middleware: "auth",
+});
 </script>
 ```
 
 ### Using Auth in Components
+
 ```vue
 <script setup>
-const { user, logout, isAuthenticated } = useAuth()
+const { user, logout, isAuthenticated } = useAuth();
 </script>
 
 <template>

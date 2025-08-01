@@ -2,7 +2,6 @@ import { BaseSeeder } from "./BaseSeeder";
 import { DevelopmentSeeder } from "./DevelopmentSeeder";
 import { TestSeeder } from "./TestSeeder";
 import { ProductionSeeder } from "./ProductionSeeder";
-import { DemoSeeder } from "./DemoSeeder";
 
 export class SeederRegistry {
   private static seeders: Map<string, () => BaseSeeder> = new Map([
@@ -12,7 +11,6 @@ export class SeederRegistry {
     ["testing", () => new TestSeeder()], // Alias
     ["production", () => new ProductionSeeder()],
     ["prod", () => new ProductionSeeder()], // Alias
-    ["demo", () => new DemoSeeder()],
   ]);
 
   static getSeeder(name: string): BaseSeeder | null {
@@ -74,4 +72,3 @@ export { BaseSeeder } from "./BaseSeeder";
 export { DevelopmentSeeder } from "./DevelopmentSeeder";
 export { TestSeeder } from "./TestSeeder";
 export { ProductionSeeder } from "./ProductionSeeder";
-export { DemoSeeder } from "./DemoSeeder";

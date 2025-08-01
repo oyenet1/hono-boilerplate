@@ -22,14 +22,12 @@ Usage:
 Examples:
   bun run seed development       Run development seeder
   bun run seed test             Run test seeder
-  bun run seed demo             Run demo seeder
   bun run seed production       Run production seeder
 
 Environment-specific aliases:
   dev, development              → DevelopmentSeeder
   test, testing                → TestSeeder
   prod, production             → ProductionSeeder
-  demo                         → DemoSeeder
 `);
     process.exit(0);
   }
