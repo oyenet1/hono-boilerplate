@@ -158,7 +158,7 @@ export class CacheWorker {
         const batch = emails.slice(i, i + batchSize);
 
         await Promise.all(
-          batch.map(async (email) => {
+          batch.map(async (email: string) => {
             try {
               const user = await this.userService.findByEmail(email);
               if (user) {

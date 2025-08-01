@@ -67,8 +67,6 @@ export class AppWorker {
         default:
           throw new Error(`Unknown job type: ${(data as any).type}`);
       }
-
-      console.log(`✅ Completed job: ${data.type} (${job.id})`);
     } catch (error) {
       console.error(`❌ Failed job: ${data.type} (${job.id}):`, error);
       throw error;

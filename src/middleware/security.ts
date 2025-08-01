@@ -126,7 +126,7 @@ export const createRateLimitMiddleware = (rateLimitConfig: RateLimitConfig) => {
             "Too many requests, please try again later"
           : "Rate limit exceeded. If you're on a shared network, please try again later or login to increase your limits";
 
-        throw new HTTPException(429, { message });
+        return ApiResponse.error(c, message, 429);
       }
 
       await next();
@@ -138,7 +138,7 @@ export const createRateLimitMiddleware = (rateLimitConfig: RateLimitConfig) => {
       }
     } catch (error) {
       if (error instanceof HTTPException) {
-        throw error;
+        return c.json({ success: false, error: error.message }, error.status);
       }
       console.error("Rate limiting error:", error);
       // Don't block request if rate limiting fails

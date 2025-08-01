@@ -69,9 +69,6 @@ export class AuthService {
   ): Promise<number> {
     throw new Error("Method not implemented.");
   }
-  getCurrentSession(token: string): Promise<UserSession | null> {
-    throw new Error("Method not implemented.");
-  }
   async getProfile(userId: string): Promise<any | null> {
     const user = await this.userService.findById(userId);
     if (!user) {

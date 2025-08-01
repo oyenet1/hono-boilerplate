@@ -14,9 +14,10 @@ export const authMiddleware = async (c: Context, next: Next) => {
     c.set("userId", decoded.userId);
     await next();
   } catch (error) {
-    throw new HTTPException(401, {
-      message: "Your session has expired. Please login again",
-    });
+    return c.json(
+      { success: false, error: "Your session has expired. Please login again" },
+      401
+    );
   }
 };
 

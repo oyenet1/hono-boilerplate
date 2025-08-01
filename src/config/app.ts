@@ -26,7 +26,7 @@ export const appConfig = {
     keyPrefix: process.env.REDIS_KEY_PREFIX || "hono:",
   },
   security: {
-    sessionTTL: parseInt(process.env.SESSION_TTL || "3600"),
+    sessionTTL: parseInt(process.env.SESSION_TTL || "31536000"),
     maxLoginAttempts: parseInt(process.env.MAX_LOGIN_ATTEMPTS || "5"),
     loginAttemptWindow: parseInt(process.env.LOGIN_ATTEMPT_WINDOW || "900"),
     passwordResetTTL: parseInt(process.env.PASSWORD_RESET_TTL || "900"),
