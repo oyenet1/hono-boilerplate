@@ -116,6 +116,7 @@ export class UniversalCacheService {
   /**
    * Clear all cache
    */
+
   async clear(): Promise<void> {
     try {
       const client = redisManager.getClient();
